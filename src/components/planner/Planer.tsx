@@ -2,7 +2,7 @@
 import React, { useRef } from 'react';
 import styles from './Planer.module.css';
 import Clock from './Clock';
-import { appConfig } from '../../config/appConfig';
+import { appConfig } from "../../constants";
 import { PenLine } from 'lucide-react';
 import type { ScheduleItem } from '../../types/schedule';
 import ScheduleCard from './ScheduleCard';

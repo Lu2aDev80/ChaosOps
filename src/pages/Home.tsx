@@ -19,7 +19,7 @@ const Home: React.FC = () => {
     <div
       className={styles.adminWrapper}
       role="main"
-      aria-label="KonfiDayPlaner Startseite"
+      aria-label="Chaos Ops Startseite"
     >
       <FlipchartBackground />
 
@@ -80,7 +80,7 @@ const Home: React.FC = () => {
               textShadow: "1px 2px 0 #fff, 0 2px 8px #fbbf24",
             }}
           >
-            KonfiDayPlaner
+            Chaos Ops
           </h1>
 
           <p
@@ -92,9 +92,9 @@ const Home: React.FC = () => {
               marginBottom: "2rem",
             }}
           >
-            Dein digitaler Begleiter für Jugendgruppen-Events.
+            Dein digitaler Begleiter für Events und Veranstaltungen.
             <br />
-            Plane, organisiere und zeige Tagespläne übersichtlich an.
+            Plane, organisiere und zeige Tagespläne Live übersichtlich an.
           </p>
 
           {/* Action Buttons */}
@@ -137,7 +137,7 @@ const Home: React.FC = () => {
               }}
             >
               <LogIn size={20} />
-              Anmelden
+              Zum Verwalten Anmelden
             </button>
 
             <button
@@ -170,7 +170,7 @@ const Home: React.FC = () => {
               }}
             >
               <Monitor size={20} />
-              Display registrieren
+              Tagesplan Display registrieren
             </button>
 
             <button
@@ -265,8 +265,7 @@ const Home: React.FC = () => {
                 lineHeight: "1.5",
               }}
             >
-              Erstelle und verwalte Events mit detaillierten Tagesplänen für
-              deine Jugendgruppe.
+              Erstelle und verwalte Events mit detaillierten Tagesplänen.
             </p>
           </div>
 
@@ -321,67 +320,8 @@ const Home: React.FC = () => {
               an.
             </p>
           </div>
-
-          {/* Feature 3 */}
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: "1rem 1.15rem 1rem 1.2rem",
-              boxShadow: "2px 4px 0 #e5e7eb, 0 2px 8px 0 rgba(0,0,0,0.08)",
-              padding: "1.5rem",
-              border: "2px solid #181818",
-              position: "relative",
-              transform: "rotate(0.3deg)",
-            }}
-          >
-            <div
-              style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "12px",
-                backgroundColor: "#f3e8ff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: "1rem",
-                border: "2px solid #181818",
-              }}
-            >
-              <Sparkles size={28} color="#9333ea" strokeWidth={2.5} />
-            </div>
-            <h3
-              style={{
-                fontFamily:
-                  '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
-                fontSize: "1.3rem",
-                fontWeight: "700",
-                color: "#181818",
-                marginBottom: "0.5rem",
-              }}
-            >
-              Flipchart-Design
-            </h3>
-            <p
-              style={{
-                fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                fontSize: "0.95rem",
-                color: "#4a5568",
-                lineHeight: "1.5",
-              }}
-            >
-              Handgezeichnetes Design für eine freundliche und jugendliche
-              Atmosphäre.
-            </p>
-          </div>
         </div>
       </main>
-
-      <footer className={styles.footer}>
-        <span className={styles.footerIcon} aria-hidden="true">
-          <Sparkles size={16} />
-        </span>
-        <span>KonfiDayPlaner – Deine Events, deine Planung</span>
-      </footer>
     </div>
   );
 };
