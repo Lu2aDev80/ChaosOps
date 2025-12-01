@@ -343,7 +343,7 @@ const AdminLogin: React.FC = () => {
             e.currentTarget.style.backgroundColor = 'transparent';
             e.currentTarget.style.borderColor = '#374151';
           }}
-        >>
+        >
           ← Zurück zur Startseite
         </button>
 

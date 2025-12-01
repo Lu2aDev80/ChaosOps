@@ -9,8 +9,6 @@ import {
 import FlipchartBackground from "../components/layout/FlipchartBackground";
 import styles from "./Admin.module.css";
 import chaosOpsLogo from "../assets/Chaos-Ops Logo.png";
-import successGremlin from '../assets/gremlins/erfolg.png';
-import hideGremlin from '../assets/gremlins/hide.png';
 import sleepGremlin from '../assets/gremlins/sleep.png';
 
 const Home: React.FC = () => {
