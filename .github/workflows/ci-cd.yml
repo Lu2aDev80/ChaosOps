@@ -30,12 +30,12 @@ jobs:
         context: .
         push: true
         tags: |
-          ghcr.io/${{ github.repository_owner }}/konfidayplaner:latest
-          ghcr.io/${{ github.repository_owner }}/konfidayplaner:${{ github.sha }}
+          ghcr.io/lu2adev80/konfidayplaner:latest
+          ghcr.io/lu2adev80/konfidayplaner:${{ github.sha }}
 
     - name: Deployment Info
       run: |
         echo "✅ Image pushed to GitHub Container Registry"
-        echo "📦 Image: ghcr.io/${{ github.repository_owner }}/konfidayplaner:latest"
+        echo "📦 Image: ghcr.io/lu2adev80/konfidayplaner:latest"
         echo "🔄 Watchtower on the server will automatically update the container within 5 minutes"
         echo "🌐 URL: http://lu2adevelopment.de/minihackathon/"
