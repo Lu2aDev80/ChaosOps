@@ -39,4 +39,4 @@ jobs:
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       run: |
-        sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null Administrator@lu2adevelopment.de "echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin && docker pull luca3008/minihackerthon:latest && docker-compose up -d"
+        sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null Administrator@lu2adevelopment.de "docker logout && echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin && docker pull luca3008/minihackerthon:latest && docker-compose up -d"
