@@ -43,4 +43,4 @@ jobs:
       env:
         SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
       run: |
-        sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null Administrator@lu2adevelopment.de "cd C:/docker/konfidayplaner && docker pull luca3008/minihackerthon:latest && docker-compose up -d"
+        sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null Administrator@lu2adevelopment.de "cd C:/docker/konfidayplaner && docker-compose down && docker pull luca3008/minihackerthon:latest && docker-compose up -d"
