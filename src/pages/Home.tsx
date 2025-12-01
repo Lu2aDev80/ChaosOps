@@ -6,7 +6,6 @@ import {
   Calendar,
   Users,
   Clock,
-  Sparkles,
   BookOpen,
 } from "lucide-react";
 import FlipchartBackground from "../components/layout/FlipchartBackground";
