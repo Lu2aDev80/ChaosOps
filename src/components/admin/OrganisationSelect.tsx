@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { organisations } from '../../data/organisations';
 import OrganisationCard from '../ui/OrganisationCard';
@@ -10,7 +10,6 @@ interface OrganisationSelectProps {
 
 const OrganisationSelect: React.FC<OrganisationSelectProps> = ({ isLogin = false }) => {
   const navigate = useNavigate();
-  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
 
   const handleOrganisationSelect = (orgId: string) => {
     // Store selected organisation in localStorage
@@ -42,7 +41,7 @@ const OrganisationSelect: React.FC<OrganisationSelectProps> = ({ isLogin = false
             key={org.id}
             name={org.name}
             description={org.description}
-            selected={selectedOrgId === org.id}
+            selected={false}
             onClick={() => handleOrganisationSelect(org.id)}
           />
         ))}

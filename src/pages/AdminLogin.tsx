@@ -9,7 +9,6 @@ import chaosOpsLogo from '../assets/Chaos-Ops Logo.png';
 const AdminLogin: React.FC = () => {
   const navigate = useNavigate();
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
-  const [showLogin, setShowLogin] = useState(false);
 
   const handleOrganisationSelect = (orgId: string) => {
     setSelectedOrgId(orgId);
