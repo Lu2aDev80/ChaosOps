@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { sendMail } from '../mailer'
+import { sendMail, testConnection } from '../mailer'
 import { renderTestEmail } from '../templates/testEmail'
 
 const router = Router()
@@ -19,6 +19,19 @@ router.post('/test', async (req, res) => {
     res.json({ ok: true })
   } catch (e: any) {
     res.status(500).json({ error: e?.message || 'Failed to send email' })
+  }
+})
+
+// Test SMTP connection without sending email
+router.post('/test-connection', async (req, res) => {
+  try {
+    const result = await testConnection()
+    res.json(result)
+  } catch (error: any) {
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    })
   }
 })
 

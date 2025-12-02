@@ -36,6 +36,9 @@ services:
       SMTP_USER: ${SMTP_USER:-info@lu2adevelopment.de}
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_IGNORE_TLS: ${SMTP_IGNORE_TLS:-false}
+      SMTP_REQUIRE_TLS: ${SMTP_REQUIRE_TLS:-true}
+      SMTP_REJECT_UNAUTHORIZED: ${SMTP_REJECT_UNAUTHORIZED:-false}
       MAIL_FROM_NAME: "${MAIL_FROM_NAME:-Chaos Ops}"
       MAIL_FROM_EMAIL: ${MAIL_FROM_EMAIL:-info@lu2adevelopment.de}
     ports:
