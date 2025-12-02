@@ -3,14 +3,20 @@ FROM node:22 AS builder
 
 WORKDIR /usr/src/app
 
+# Copy package files
 COPY package*.json ./
-RUN npm install
 
+# Copy Prisma schema first (needed for postinstall hook)
+COPY prisma ./prisma
+
+# Install ALL dependencies (including devDependencies for build)
+# This will run postinstall which generates Prisma Client
+RUN npm ci
+
+# Copy rest of source code
 COPY . .
 
-# Generate Prisma Client
-RUN npx prisma generate
-
+# Build the application
 RUN npm run build
 
 # Production stage
