@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "outDir": "./dist",
+    "rootDir": "./",
+    "strict": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "types": ["node"],
+    "sourceMap": false,
+    "declaration": false,
+    "allowJs": true,
+    "noImplicitAny": false
+  },
+  "include": [
+    "server/**/*",
+    "src/services/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/components",
+    "src/pages",
+    "src/hooks",
+    "src/context"
+  ]
+}

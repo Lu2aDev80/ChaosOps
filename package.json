@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "api:dev": "tsx watch server/index.ts",
+    "api:build": "tsc --project tsconfig.server.json",
+    "api:start": "node dist/server/index.js",
     "dev:all": "concurrently \"npm:api:dev\" \"vite\"",
     "build": "tsc -b && vite build",
     "lint": "eslint .",

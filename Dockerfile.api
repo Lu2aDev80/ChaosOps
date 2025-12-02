@@ -1,24 +1,42 @@
-# Use full Node.js image with all build tools
-FROM node:22
+# Simple production Dockerfile for API server
+FROM node:22-alpine
+
+# Install wget for health checks
+RUN apk add --no-cache wget
 
 WORKDIR /usr/src/app
 
 # Copy package files
 COPY package*.json ./
+
+# Copy Prisma schema first (needed for postinstall hook)
 COPY prisma ./prisma
 
-# Install ALL dependencies (including devDependencies with tsx)
+# Install all dependencies (including tsx)
 RUN npm ci
 
-# Copy server source
+# Copy source code
 COPY server ./server
 COPY src/services ./src/services
 
-# Generate Prisma Client
-RUN npx prisma generate
+# Create startup script with proper newlines
+RUN printf '#!/bin/sh\n\
+echo "Starting API server..."\n\
+echo "Setting up database..."\n\
+if [ -d "/usr/src/app/prisma/migrations" ] && [ "$(ls -A /usr/src/app/prisma/migrations 2>/dev/null)" ]; then\n\
+  echo "Running database migrations..."\n\
+  npx prisma migrate deploy\n\
+else\n\
+  echo "No migrations found, pushing schema directly..."\n\
+  npx prisma db push --accept-data-loss\n\
+fi\n\
+echo "Database setup completed"\n\
+echo "Starting Node.js server..."\n\
+exec npx tsx server/index.ts\n' > /usr/src/app/start.sh
+
+RUN chmod +x /usr/src/app/start.sh
 
 ENV NODE_ENV=production
 EXPOSE 3000
 
-# Use node --loader to run TypeScript directly without tsx
-CMD ["sh", "-c", "npx prisma migrate deploy && node --import tsx server/index.ts"]
+CMD ["/usr/src/app/start.sh"]
