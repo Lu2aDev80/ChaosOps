@@ -87,9 +87,9 @@ router.post("/signup", async (req, res) => {
 
     // Send verification email
     try {
-      const verificationLink = `${req.protocol}://${req.get(
-        "host"
-      )}/verify-email?token=${verificationToken}`;
+      const basePath = process.env.APP_BASE_PATH || '';
+      const frontendHost = process.env.FRONTEND_HOST || `${req.protocol}://${req.get("host")}`;
+      const verificationLink = `${frontendHost}${basePath}/verify-email?token=${verificationToken}`;
       const emailHtml = renderVerificationEmail(
         adminUsername,
         orgName,
@@ -282,9 +282,9 @@ router.post("/resend-verification", async (req, res) => {
 
     // Send new verification email
     try {
-      const verificationLink = `${req.protocol}://${req.get(
-        "host"
-      )}/verify-email?token=${verificationToken}`;
+      const basePath = process.env.APP_BASE_PATH || '';
+      const frontendHost = process.env.FRONTEND_HOST || `${req.protocol}://${req.get("host")}`;
+      const verificationLink = `${frontendHost}${basePath}/verify-email?token=${verificationToken}`;
       const emailHtml = renderVerificationEmail(
         user.username,
         user.organisation.name,

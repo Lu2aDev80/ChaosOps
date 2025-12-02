@@ -41,6 +41,8 @@ services:
       SMTP_REJECT_UNAUTHORIZED: ${SMTP_REJECT_UNAUTHORIZED:-false}
       MAIL_FROM_NAME: "${MAIL_FROM_NAME:-Chaos Ops}"
       MAIL_FROM_EMAIL: ${MAIL_FROM_EMAIL:-info@lu2adevelopment.de}
+      APP_BASE_PATH: ${APP_BASE_PATH:-/minihackathon}
+      FRONTEND_HOST: ${FRONTEND_HOST:-http://localhost:8080}
     ports:
       - '3000:3000'
     restart: on-failure:3
