@@ -17,9 +17,9 @@ import ScheduleManager from "../components/planner/ScheduleManager";
 import FlipchartBackground from "../components/layout/FlipchartBackground";
 import type { Event, DayPlan } from "../types/event";
 import type { ScheduleItem } from "../types/schedule";
-import { organisations } from "../data/organisations";
-import styles from './Admin.module.css';
-import chaosOpsLogo from '../assets/Chaos-Ops Logo.png';
+import styles from "./Admin.module.css";
+import chaosOpsLogo from "../assets/Chaos-Ops Logo.png";
+import { api } from "../lib/api";
 
 const Dashboard: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -42,7 +42,18 @@ const Dashboard: React.FC = () => {
   );
 
   // Get organization info
-  const organisation = organisations.find((org) => org.id === orgId);
+  const [organisationName, setOrganisationName] = useState<string | null>(null);
+  useEffect(() => {
+    const load = async () => {
+      if (!orgId) return;
+      try {
+        const all = await api.organisations();
+        const org = all.find((o: any) => o.id === orgId);
+        setOrganisationName(org?.name ?? null);
+      } catch {}
+    };
+    load();
+  }, [orgId]);
 
   useEffect(() => {
     if (!orgId) {
@@ -189,7 +200,10 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await api.logout();
+    } catch {}
     navigate("/");
   };
 
@@ -276,72 +290,79 @@ const Dashboard: React.FC = () => {
 
   // Main dashboard view
   const cardStyle = {
-    background: '#fff',
-    borderRadius: '1.2rem 1.35rem 1.15rem 1.25rem',
-    boxShadow: '2px 4px 0 #e5e7eb, 0 2px 8px 0 rgba(0,0,0,0.08)',
-    padding: '2rem',
-    border: '2px solid #181818',
-    position: 'relative' as const,
-    transform: 'rotate(-0.2deg)',
+    background: "#fff",
+    borderRadius: "1.2rem 1.35rem 1.15rem 1.25rem",
+    boxShadow: "2px 4px 0 #e5e7eb, 0 2px 8px 0 rgba(0,0,0,0.08)",
+    padding: "2rem",
+    border: "2px solid #181818",
+    position: "relative" as const,
+    transform: "rotate(-0.2deg)",
   };
 
   const buttonStyle = {
-    padding: '0.75rem 1.5rem',
-    border: '2px solid #181818',
-    borderRadius: '8px',
-    fontSize: '0.95rem',
-    fontWeight: '700',
+    padding: "0.75rem 1.5rem",
+    border: "2px solid #181818",
+    borderRadius: "8px",
+    fontSize: "0.95rem",
+    fontWeight: "700",
     fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    transition: 'all 0.2s ease',
-    boxShadow: '2px 4px 0 #181818',
-    textShadow: '0 1px 2px rgba(0,0,0,0.1)',
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
+    transition: "all 0.2s ease",
+    boxShadow: "2px 4px 0 #181818",
+    textShadow: "0 1px 2px rgba(0,0,0,0.1)",
   };
 
   return (
     <div className={styles.adminWrapper} role="main" aria-label="Dashboard">
       <FlipchartBackground />
 
-      <main className={styles.adminContent} style={{
-        padding: '2rem 1rem',
-        maxWidth: '1400px',
-        margin: '0 auto',
-      }}>
+      <main
+        className={styles.adminContent}
+        style={{
+          padding: "2rem 1rem",
+          maxWidth: "1400px",
+          margin: "0 auto",
+        }}
+      >
         {/* Header Card */}
-        <div style={{
-          ...cardStyle,
-          marginBottom: '2rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '1.5rem',
-        }}>
+        <div
+          style={{
+            ...cardStyle,
+            marginBottom: "2rem",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "1.5rem",
+          }}
+        >
           <div className={styles.tape} />
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
             <img
               src={chaosOpsLogo}
               alt="Chaos Ops Logo"
               style={{
-                maxWidth: '150px',
-                height: 'auto',
-                filter: 'drop-shadow(2px 4px 8px rgba(0,0,0,0.1))',
+                maxWidth: "150px",
+                height: "auto",
+                filter: "drop-shadow(2px 4px 8px rgba(0,0,0,0.1))",
               }}
             />
             <div>
               <h1
                 style={{
-                  fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
-                  fontSize: 'clamp(1.5rem, 4vw, 2rem)',
-                  fontWeight: '700',
-                  color: '#0f172a',
+                  fontFamily:
+                    '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
+                  fontSize: "clamp(1.5rem, 4vw, 2rem)",
+                  fontWeight: "700",
+                  color: "#0f172a",
                   margin: 0,
-                  marginBottom: '0.25rem',
-                  textShadow: '2px 2px 0 #fff, 0 3px 6px rgba(251, 191, 36, 0.8)',
+                  marginBottom: "0.25rem",
+                  textShadow:
+                    "2px 2px 0 #fff, 0 3px 6px rgba(251, 191, 36, 0.8)",
                 }}
               >
                 Admin Dashboard
@@ -349,13 +370,13 @@ const Dashboard: React.FC = () => {
               <p
                 style={{
                   fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                  fontSize: 'clamp(0.875rem, 2vw, 1rem)',
-                  color: '#334155',
+                  fontSize: "clamp(0.875rem, 2vw, 1rem)",
+                  color: "#334155",
                   margin: 0,
-                  fontWeight: '500',
+                  fontWeight: "500",
                 }}
               >
-                {organisation?.name || "Organisation"}
+                {organisationName || "Organisation"}
               </p>
             </div>
           </div>
@@ -364,20 +385,20 @@ const Dashboard: React.FC = () => {
             onClick={handleLogout}
             style={{
               ...buttonStyle,
-              backgroundColor: '#fff',
-              color: '#dc2626',
-              border: '2px solid #dc2626',
-              boxShadow: '2px 4px 0 #dc2626',
+              backgroundColor: "#fff",
+              color: "#dc2626",
+              border: "2px solid #dc2626",
+              boxShadow: "2px 4px 0 #dc2626",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '3px 6px 0 #dc2626';
-              e.currentTarget.style.backgroundColor = '#fee2e2';
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = "3px 6px 0 #dc2626";
+              e.currentTarget.style.backgroundColor = "#fee2e2";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '2px 4px 0 #dc2626';
-              e.currentTarget.style.backgroundColor = '#fff';
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "2px 4px 0 #dc2626";
+              e.currentTarget.style.backgroundColor = "#fff";
             }}
           >
             <LogOut size={18} />
@@ -398,19 +419,22 @@ const Dashboard: React.FC = () => {
         >
           {/* Events List */}
           <div style={cardStyle}>
-            <div style={{
-              position: 'absolute',
-              top: '-12px',
-              left: '30%',
-              width: '45px',
-              height: '16px',
-              background: 'repeating-linear-gradient(135deg, #fffbe7 0 6px, #fbbf24 6px 12px)',
-              borderRadius: '6px',
-              border: '1.5px solid #f59e0b',
-              boxShadow: '0 1px 4px rgba(245,158,11,0.3)',
-              transform: 'translateX(-50%) rotate(-2deg)',
-              zIndex: 2,
-            }} />
+            <div
+              style={{
+                position: "absolute",
+                top: "-12px",
+                left: "30%",
+                width: "45px",
+                height: "16px",
+                background:
+                  "repeating-linear-gradient(135deg, #fffbe7 0 6px, #fbbf24 6px 12px)",
+                borderRadius: "6px",
+                border: "1.5px solid #f59e0b",
+                boxShadow: "0 1px 4px rgba(245,158,11,0.3)",
+                transform: "translateX(-50%) rotate(-2deg)",
+                zIndex: 2,
+              }}
+            />
 
             <div
               style={{
@@ -422,7 +446,8 @@ const Dashboard: React.FC = () => {
             >
               <h2
                 style={{
-                  fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
+                  fontFamily:
+                    '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
                   fontSize: "clamp(1.25rem, 3vw, 1.5rem)",
                   fontWeight: "700",
                   color: "#0f172a",
@@ -445,14 +470,14 @@ const Dashboard: React.FC = () => {
                   fontSize: "0.9rem",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '3px 6px 0 #181818';
-                  e.currentTarget.style.backgroundColor = '#f59e0b';
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = "3px 6px 0 #181818";
+                  e.currentTarget.style.backgroundColor = "#f59e0b";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '2px 4px 0 #181818';
-                  e.currentTarget.style.backgroundColor = '#fbbf24';
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "2px 4px 0 #181818";
+                  e.currentTarget.style.backgroundColor = "#fbbf24";
                 }}
               >
                 <Plus size={18} strokeWidth={2.5} />
@@ -472,9 +497,9 @@ const Dashboard: React.FC = () => {
                     borderRadius: "12px",
                     color: "#64748b",
                     fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                    fontSize: '1rem',
-                    fontWeight: '500',
-                    backgroundColor: '#f8fafc',
+                    fontSize: "1rem",
+                    fontWeight: "500",
+                    backgroundColor: "#f8fafc",
                   }}
                 >
                   Noch keine Veranstaltungen. Klicke auf "Neu" um zu starten!
@@ -501,14 +526,15 @@ const Dashboard: React.FC = () => {
                     }}
                     onMouseEnter={(e) => {
                       if (selectedEvent?.id !== event.id) {
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '2px 4px 0 #cbd5e1';
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.boxShadow = "2px 4px 0 #cbd5e1";
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (selectedEvent?.id !== event.id) {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow =
+                          "0 1px 3px rgba(0,0,0,0.1)";
                       }
                     }}
                   >
@@ -517,13 +543,14 @@ const Dashboard: React.FC = () => {
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "start",
-                        gap: '1rem',
+                        gap: "1rem",
                       }}
                     >
                       <div style={{ flex: 1 }}>
                         <h3
                           style={{
-                            fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
+                            fontFamily:
+                              '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
                             fontSize: "clamp(1.1rem, 2.5vw, 1.25rem)",
                             fontWeight: "700",
                             color: "#0f172a",
@@ -536,11 +563,12 @@ const Dashboard: React.FC = () => {
                         {event.description && (
                           <p
                             style={{
-                              fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                              fontFamily:
+                                '"Inter", "Roboto", Arial, sans-serif',
                               fontSize: "0.9rem",
                               color: "#475569",
                               marginBottom: "0.75rem",
-                              fontWeight: '500',
+                              fontWeight: "500",
                             }}
                           >
                             {event.description}
@@ -554,7 +582,7 @@ const Dashboard: React.FC = () => {
                             display: "flex",
                             alignItems: "center",
                             gap: "0.5rem",
-                            fontWeight: '600',
+                            fontWeight: "600",
                           }}
                         >
                           <FileText size={14} strokeWidth={2} />
@@ -562,7 +590,13 @@ const Dashboard: React.FC = () => {
                           {event.dayPlans.length !== 1 ? "e" : ""}
                         </div>
                       </div>
-                      <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "0.5rem",
+                          flexShrink: 0,
+                        }}
+                      >
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -576,16 +610,17 @@ const Dashboard: React.FC = () => {
                             backgroundColor: "#f0f9ff",
                             color: "#0284c7",
                             cursor: "pointer",
-                            transition: 'all 0.2s ease',
-                            boxShadow: '1px 2px 0 #0ea5e9',
+                            transition: "all 0.2s ease",
+                            boxShadow: "1px 2px 0 #0ea5e9",
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = "#e0f2fe";
-                            e.currentTarget.style.transform = 'translateY(-1px)';
+                            e.currentTarget.style.transform =
+                              "translateY(-1px)";
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.backgroundColor = "#f0f9ff";
-                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.transform = "translateY(0)";
                           }}
                           title="Bearbeiten"
                         >
@@ -603,16 +638,17 @@ const Dashboard: React.FC = () => {
                             backgroundColor: "#fef2f2",
                             color: "#dc2626",
                             cursor: "pointer",
-                            transition: 'all 0.2s ease',
-                            boxShadow: '1px 2px 0 #ef4444',
+                            transition: "all 0.2s ease",
+                            boxShadow: "1px 2px 0 #ef4444",
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = "#fee2e2";
-                            e.currentTarget.style.transform = 'translateY(-1px)';
+                            e.currentTarget.style.transform =
+                              "translateY(-1px)";
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.backgroundColor = "#fef2f2";
-                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.transform = "translateY(0)";
                           }}
                           title="Löschen"
                         >
@@ -628,23 +664,28 @@ const Dashboard: React.FC = () => {
 
           {/* Day Plans List - Only shown when event is selected */}
           {selectedEvent && (
-            <div style={{
-              ...cardStyle,
-              transform: 'rotate(0.2deg)',
-            }}>
-              <div style={{
-                position: 'absolute',
-                top: '-12px',
-                right: '30%',
-                width: '45px',
-                height: '16px',
-                background: 'repeating-linear-gradient(135deg, #fffbe7 0 6px, #10b981 6px 12px)',
-                borderRadius: '6px',
-                border: '1.5px solid #059669',
-                boxShadow: '0 1px 4px rgba(5,150,105,0.3)',
-                transform: 'translateX(50%) rotate(3deg)',
-                zIndex: 2,
-              }} />
+            <div
+              style={{
+                ...cardStyle,
+                transform: "rotate(0.2deg)",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  top: "-12px",
+                  right: "30%",
+                  width: "45px",
+                  height: "16px",
+                  background:
+                    "repeating-linear-gradient(135deg, #fffbe7 0 6px, #10b981 6px 12px)",
+                  borderRadius: "6px",
+                  border: "1.5px solid #059669",
+                  boxShadow: "0 1px 4px rgba(5,150,105,0.3)",
+                  transform: "translateX(50%) rotate(3deg)",
+                  zIndex: 2,
+                }}
+              />
 
               <div
                 style={{
@@ -656,7 +697,8 @@ const Dashboard: React.FC = () => {
               >
                 <h2
                   style={{
-                    fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
+                    fontFamily:
+                      '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
                     fontSize: "clamp(1.25rem, 3vw, 1.5rem)",
                     fontWeight: "700",
                     color: "#0f172a",
@@ -679,14 +721,14 @@ const Dashboard: React.FC = () => {
                     fontSize: "0.9rem",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '3px 6px 0 #181818';
-                    e.currentTarget.style.backgroundColor = '#059669';
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                    e.currentTarget.style.boxShadow = "3px 6px 0 #181818";
+                    e.currentTarget.style.backgroundColor = "#059669";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '2px 4px 0 #181818';
-                    e.currentTarget.style.backgroundColor = '#10b981';
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "2px 4px 0 #181818";
+                    e.currentTarget.style.backgroundColor = "#10b981";
                   }}
                 >
                   <Plus size={18} strokeWidth={2.5} />
@@ -701,12 +743,13 @@ const Dashboard: React.FC = () => {
                   border: "2px solid #f59e0b",
                   borderRadius: "10px",
                   marginBottom: "1.5rem",
-                  boxShadow: '1px 2px 0 #f59e0b',
+                  boxShadow: "1px 2px 0 #f59e0b",
                 }}
               >
                 <div
                   style={{
-                    fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
+                    fontFamily:
+                      '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
                     fontSize: "1.1rem",
                     fontWeight: "700",
                     color: "#0f172a",
@@ -720,7 +763,7 @@ const Dashboard: React.FC = () => {
                     fontFamily: '"Inter", "Roboto", Arial, sans-serif',
                     fontSize: "0.85rem",
                     color: "#78350f",
-                    fontWeight: '600',
+                    fontWeight: "600",
                   }}
                 >
                   Ausgewählte Veranstaltung
@@ -743,12 +786,13 @@ const Dashboard: React.FC = () => {
                       borderRadius: "12px",
                       color: "#64748b",
                       fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                      fontSize: '1rem',
-                      fontWeight: '500',
-                      backgroundColor: '#f8fafc',
+                      fontSize: "1rem",
+                      fontWeight: "500",
+                      backgroundColor: "#f8fafc",
                     }}
                   >
-                    Noch keine Tagespläne. Klicke auf "Neu" um einen zu erstellen!
+                    Noch keine Tagespläne. Klicke auf "Neu" um einen zu
+                    erstellen!
                   </div>
                 ) : (
                   selectedEvent.dayPlans
@@ -765,15 +809,16 @@ const Dashboard: React.FC = () => {
                           borderRadius: "12px",
                           backgroundColor: "#f8fafc",
                           transition: "all 0.2s ease",
-                          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-2px)';
-                          e.currentTarget.style.boxShadow = '2px 4px 0 #cbd5e1';
+                          e.currentTarget.style.transform = "translateY(-2px)";
+                          e.currentTarget.style.boxShadow = "2px 4px 0 #cbd5e1";
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+                          e.currentTarget.style.transform = "translateY(0)";
+                          e.currentTarget.style.boxShadow =
+                            "0 1px 3px rgba(0,0,0,0.1)";
                         }}
                       >
                         <div
@@ -781,13 +826,14 @@ const Dashboard: React.FC = () => {
                             display: "flex",
                             justifyContent: "space-between",
                             alignItems: "start",
-                            gap: '1rem',
+                            gap: "1rem",
                           }}
                         >
                           <div style={{ flex: 1 }}>
                             <h3
                               style={{
-                                fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
+                                fontFamily:
+                                  '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
                                 fontSize: "clamp(1.1rem, 2.5vw, 1.25rem)",
                                 fontWeight: "700",
                                 color: "#0f172a",
@@ -799,11 +845,12 @@ const Dashboard: React.FC = () => {
                             </h3>
                             <p
                               style={{
-                                fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                                fontFamily:
+                                  '"Inter", "Roboto", Arial, sans-serif',
                                 fontSize: "0.9rem",
                                 color: "#475569",
                                 marginBottom: "0.75rem",
-                                fontWeight: '500',
+                                fontWeight: "500",
                               }}
                             >
                               {new Date(dayPlan.date).toLocaleDateString(
@@ -818,13 +865,14 @@ const Dashboard: React.FC = () => {
                             </p>
                             <div
                               style={{
-                                fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                                fontFamily:
+                                  '"Inter", "Roboto", Arial, sans-serif',
                                 fontSize: "0.85rem",
                                 color: "#64748b",
                                 display: "flex",
                                 alignItems: "center",
                                 gap: "0.5rem",
-                                fontWeight: '600',
+                                fontWeight: "600",
                               }}
                             >
                               <Calendar size={14} strokeWidth={2} />
@@ -849,16 +897,20 @@ const Dashboard: React.FC = () => {
                                 backgroundColor: "#fffbeb",
                                 color: "#f59e0b",
                                 cursor: "pointer",
-                                transition: 'all 0.2s ease',
-                                boxShadow: '1px 2px 0 #f59e0b',
+                                transition: "all 0.2s ease",
+                                boxShadow: "1px 2px 0 #f59e0b",
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = "#fef3c7";
-                                e.currentTarget.style.transform = 'translateY(-1px)';
+                                e.currentTarget.style.backgroundColor =
+                                  "#fef3c7";
+                                e.currentTarget.style.transform =
+                                  "translateY(-1px)";
                               }}
                               onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = "#fffbeb";
-                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.backgroundColor =
+                                  "#fffbeb";
+                                e.currentTarget.style.transform =
+                                  "translateY(0)";
                               }}
                               title="Termine verwalten"
                             >
@@ -877,16 +929,20 @@ const Dashboard: React.FC = () => {
                                 backgroundColor: "#f0fdf4",
                                 color: "#10b981",
                                 cursor: "pointer",
-                                transition: 'all 0.2s ease',
-                                boxShadow: '1px 2px 0 #10b981',
+                                transition: "all 0.2s ease",
+                                boxShadow: "1px 2px 0 #10b981",
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = "#d1fae5";
-                                e.currentTarget.style.transform = 'translateY(-1px)';
+                                e.currentTarget.style.backgroundColor =
+                                  "#d1fae5";
+                                e.currentTarget.style.transform =
+                                  "translateY(-1px)";
                               }}
                               onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = "#f0fdf4";
-                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.backgroundColor =
+                                  "#f0fdf4";
+                                e.currentTarget.style.transform =
+                                  "translateY(0)";
                               }}
                               title="Vorschau"
                             >
@@ -904,16 +960,20 @@ const Dashboard: React.FC = () => {
                                 backgroundColor: "#f0f9ff",
                                 color: "#0284c7",
                                 cursor: "pointer",
-                                transition: 'all 0.2s ease',
-                                boxShadow: '1px 2px 0 #0ea5e9',
+                                transition: "all 0.2s ease",
+                                boxShadow: "1px 2px 0 #0ea5e9",
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = "#e0f2fe";
-                                e.currentTarget.style.transform = 'translateY(-1px)';
+                                e.currentTarget.style.backgroundColor =
+                                  "#e0f2fe";
+                                e.currentTarget.style.transform =
+                                  "translateY(-1px)";
                               }}
                               onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = "#f0f9ff";
-                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.backgroundColor =
+                                  "#f0f9ff";
+                                e.currentTarget.style.transform =
+                                  "translateY(0)";
                               }}
                               title="Bearbeiten"
                             >
@@ -928,16 +988,20 @@ const Dashboard: React.FC = () => {
                                 backgroundColor: "#fef2f2",
                                 color: "#dc2626",
                                 cursor: "pointer",
-                                transition: 'all 0.2s ease',
-                                boxShadow: '1px 2px 0 #ef4444',
+                                transition: "all 0.2s ease",
+                                boxShadow: "1px 2px 0 #ef4444",
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = "#fee2e2";
-                                e.currentTarget.style.transform = 'translateY(-1px)';
+                                e.currentTarget.style.backgroundColor =
+                                  "#fee2e2";
+                                e.currentTarget.style.transform =
+                                  "translateY(-1px)";
                               }}
                               onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = "#fef2f2";
-                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.backgroundColor =
+                                  "#fef2f2";
+                                e.currentTarget.style.transform =
+                                  "translateY(0)";
                               }}
                               title="Löschen"
                             >

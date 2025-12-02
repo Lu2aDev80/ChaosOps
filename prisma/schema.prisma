@@ -18,6 +18,7 @@ model Organisation {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   events      Event[]
+  users       User[]
 
   @@map("organisations")
 }
@@ -98,4 +99,39 @@ model AdminUser {
   updatedAt    DateTime @updatedAt
 
   @@map("admin_users")
+}
+
+// Core user model scoped to an organisation
+model User {
+  id              String        @id @default(uuid())
+  organisationId  String
+  organisation    Organisation  @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  username        String
+  email           String?
+  passwordHash    String
+  role            UserRole      @default(member)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  sessions        Session[]
+
+  @@unique([organisationId, username])
+  @@unique([organisationId, email])
+  @@map("users")
+}
+
+// Session for cookie-based auth
+model Session {
+  id         String   @id @default(uuid())
+  token      String   @unique
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+
+  @@map("sessions")
+}
+
+enum UserRole {
+  admin
+  member
 }
