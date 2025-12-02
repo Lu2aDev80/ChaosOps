@@ -1,0 +1,101 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Organisation model
+model Organisation {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  events      Event[]
+
+  @@map("organisations")
+}
+
+// Event model
+model Event {
+  id             String   @id @default(uuid())
+  name           String
+  description    String?
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  dayPlans       DayPlan[]
+
+  @@map("events")
+}
+
+// DayPlan model
+model DayPlan {
+  id        String   @id @default(uuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name      String
+  date      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  scheduleItems ScheduleItem[]
+
+  @@map("day_plans")
+}
+
+// ScheduleItem model (supports all item types)
+model ScheduleItem {
+  id               Int      @id @default(autoincrement())
+  dayPlanId        String
+  dayPlan          DayPlan  @relation(fields: [dayPlanId], references: [id], onDelete: Cascade)
+  time             String
+  type             ScheduleItemType
+  title            String
+  speaker          String?
+  location         String?
+  details          String?
+  materials        String?
+  duration         String?
+  snacks           String?
+  facilitator      String?
+  // Change tracking fields
+  timeChanged      Boolean? @default(false)
+  positionChanged  Boolean? @default(false)
+  originalTime     String?
+  originalPosition Int?
+  // Position in schedule
+  position         Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("schedule_items")
+  @@index([dayPlanId, position])
+}
+
+enum ScheduleItemType {
+  session
+  workshop
+  break
+  announcement
+  game
+  transition
+}
+
+// Admin users (for authentication)
+model AdminUser {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String
+  email        String?  @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("admin_users")
+}

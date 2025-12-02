@@ -18,6 +18,8 @@ A modern web application for managing and displaying schedules for Konfi Day eve
 - **Styling**: Tailwind CSS 4
 - **Routing**: React Router DOM 7
 - **Icons**: Lucide React
+- **Database**: PostgreSQL 16
+- **ORM**: Prisma 6
 - **Deployment**: Docker with Nginx
 
 ## Project Structure
@@ -68,12 +70,24 @@ cd KonfiDayPlaner
 npm install
 ```
 
-3. Start the development server:
+3. Set up the database (see [DATABASE_SETUP.md](./DATABASE_SETUP.md) for details):
+```bash
+# Start PostgreSQL with Docker
+docker-compose up -d postgres
+
+# Run migrations
+npm run db:migrate:dev
+
+# Seed initial data (optional)
+npm run db:seed
+```
+
+4. Start the development server:
 ```bash
 npm run dev
 ```
 
-4. Open your browser to `http://localhost:5173`
+5. Open your browser to `http://localhost:5173`
 
 ### Building for Production
 
@@ -93,6 +107,13 @@ docker-compose up -d
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
 - `npm run lint` - Run ESLint
+- `npm run db:generate` - Generate Prisma Client
+- `npm run db:migrate:dev` - Create and run migrations (dev)
+- `npm run db:migrate` - Run migrations (production)
+- `npm run db:seed` - Seed database with initial data
+- `npm run db:studio` - Open Prisma Studio (database GUI)
+
+For detailed database setup and management, see [DATABASE_SETUP.md](./DATABASE_SETUP.md).
 
 ## Code Organization
 

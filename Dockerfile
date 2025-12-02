@@ -7,6 +7,10 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
+
+# Generate Prisma Client
+RUN npx prisma generate
+
 RUN npm run build
 
 # Production stage
@@ -21,7 +25,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
-# Create startup script with logging
+# Create startup script with logging and database migration
 RUN echo '#!/bin/sh' > /docker-entrypoint-custom.sh && \
     echo 'echo "============================================"' >> /docker-entrypoint-custom.sh && \
     echo 'echo "🚀 KonfiDayPlaner Container Starting..."' >> /docker-entrypoint-custom.sh && \

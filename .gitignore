@@ -19,6 +19,11 @@ dist-ssr
 .env.test.local
 .env.production.local
 
+# Prisma
+prisma/migrations
+node_modules/.prisma
+node_modules/@prisma
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
