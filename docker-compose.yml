@@ -31,15 +31,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    build:
-      context: ./server-nest
-      dockerfile: Dockerfile
-    ports:
-      - "4000:4000"
     environment:
-      - PORT=4000
-    depends_on:
-      - postgres
+      DATABASE_URL: postgresql://${POSTGRES_USER:-konfiadmin}:${POSTGRES_PASSWORD:-konfi2024secure}@postgres:5432/${POSTGRES_DB:-konfidayplaner}?schema=public
+      PORT: 3000
       LOG_LEVEL: ${LOG_LEVEL:-info}
       PRISMA_LOG: ${PRISMA_LOG:-warn}
       NODE_ENV: ${NODE_ENV:-production}
