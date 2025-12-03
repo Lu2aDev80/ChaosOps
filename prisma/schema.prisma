@@ -20,6 +20,7 @@ model Organisation {
   updatedAt   DateTime @updatedAt
   events      Event[]
   users       User[]
+  invitations Invitation[]
 
   @@map("organisations")
 }
@@ -138,4 +139,20 @@ model Session {
 enum UserRole {
   admin
   member
+}
+
+// Invitation model for pending user invitations
+model Invitation {
+  id                String   @id @default(uuid())
+  organisationId    String
+  organisation      Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  email             String
+  role              UserRole @default(member)
+  token             String   @unique
+  expiresAt         DateTime
+  createdAt         DateTime @default(now())
+  invitedBy         String   // username of the inviter
+
+  @@unique([organisationId, email])
+  @@map("invitations")
 }

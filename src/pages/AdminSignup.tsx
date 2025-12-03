@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Mail, CheckCircle } from "lucide-react";
+import { Mail, CheckCircle, Eye, EyeOff } from "lucide-react";
 import FlipchartBackground from "../components/layout/FlipchartBackground";
 import { AlertModal } from "../components/ui";
 import styles from "./Admin.module.css";
+import chaosOpsLogo from "../assets/Chaos-Ops Logo.png";
 import { api } from "../lib/api";
 
 const AdminSignup: React.FC = () => {
@@ -15,6 +16,7 @@ const AdminSignup: React.FC = () => {
     adminEmail: "",
     password: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [signupSuccess, setSignupSuccess] = useState(false);
   const [signupResult, setSignupResult] = useState<{
@@ -41,6 +43,16 @@ const AdminSignup: React.FC = () => {
         isOpen: true,
         title: 'Fehlende Angaben',
         message: 'Bitte fülle alle Pflichtfelder aus!',
+        type: 'warning',
+      });
+      return;
+    }
+    
+    if (form.password.length < 6) {
+      setModalState({
+        isOpen: true,
+        title: 'Passwort zu schwach',
+        message: 'Das Passwort muss mindestens 6 Zeichen lang sein.',
         type: 'warning',
       });
       return;
@@ -99,21 +111,48 @@ const AdminSignup: React.FC = () => {
             alignItems: "center",
             gap: "2rem",
             padding: "2rem 1rem",
-            maxWidth: "600px",
+            maxWidth: "700px",
             margin: "0 auto",
           }}
         >
-          {/* Header */}
-          <div className={styles.header}>
-            <h1 className={styles.title}>Registrierung erfolgreich! 🎉</h1>
-            <p className={styles.subtitle}>E-Mail-Bestätigung erforderlich</p>
-          </div>
-
           {/* Success Card */}
           <div
-            className={styles.adminCard}
-            style={{ width: "100%", textAlign: "center" }}
+            style={{
+              background: "#fff",
+              borderRadius: "1.2rem 1.35rem 1.15rem 1.25rem",
+              boxShadow: "2px 4px 0 #e5e7eb, 0 2px 8px 0 rgba(0,0,0,0.08)",
+              padding: "3rem 2rem",
+              border: "2px solid #181818",
+              textAlign: "center",
+              width: "100%",
+              position: "relative",
+              transform: "rotate(-0.2deg)",
+              zIndex: 1,
+            }}
           >
+            {/* Tape */}
+            <div className={styles.tape} />
+            
+            <div
+              style={{
+                marginBottom: "2rem",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <img
+                src={chaosOpsLogo}
+                alt="Chaos Ops Logo"
+                style={{
+                  maxWidth: "200px",
+                  maxHeight: "80px",
+                  width: "auto",
+                  height: "auto",
+                  filter: "drop-shadow(2px 4px 8px rgba(0,0,0,0.1))",
+                }}
+              />
+            </div>
             <CheckCircle
               size={64}
               style={{
@@ -122,26 +161,29 @@ const AdminSignup: React.FC = () => {
               }}
             />
 
-            <h3
+            <h1
               style={{
                 fontFamily:
                   '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
-                fontSize: "1.8rem",
-                marginBottom: "1rem",
+                fontSize: "2rem",
+                fontWeight: "700",
                 color: "#181818",
+                marginBottom: "0.5rem",
               }}
             >
-              Organisation erstellt!
-            </h3>
-
+              Registrierung erfolgreich! 🎉
+            </h1>
+            
             <p
               style={{
-                color: "#64748b",
-                marginBottom: "1.5rem",
+                fontFamily: '"Inter", "Roboto", Arial, sans-serif',
                 fontSize: "1.1rem",
+                color: "#4a5568",
+                marginBottom: "1.5rem",
+                fontWeight: "500",
               }}
             >
-              {signupResult.message}
+              E-Mail-Bestätigung erforderlich
             </p>
 
             {/* Account Details */}
@@ -240,18 +282,29 @@ const AdminSignup: React.FC = () => {
               <button
                 onClick={() => navigate("/login")}
                 style={{
-                  padding: "0.75rem 1.5rem",
+                  padding: "1rem 2rem",
                   border: "2px solid #181818",
                   borderRadius: "8px",
-                  fontSize: "1rem",
-                  fontWeight: "600",
+                  fontSize: "1.1rem",
+                  fontWeight: "700",
+                  fontFamily: '"Inter", "Roboto", Arial, sans-serif',
                   backgroundColor: "#10b981",
                   color: "#fff",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   gap: "0.5rem",
+                  transition: "all 0.2s ease",
                   boxShadow: "2px 4px 0 #181818",
+                  textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = "3px 6px 0 #181818";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "2px 4px 0 #181818";
                 }}
               >
                 Zur Anmeldung
@@ -260,18 +313,29 @@ const AdminSignup: React.FC = () => {
               <button
                 onClick={() => navigate("/")}
                 style={{
-                  padding: "0.75rem 1.5rem",
+                  padding: "1rem 2rem",
                   border: "2px solid #181818",
                   borderRadius: "8px",
-                  fontSize: "1rem",
-                  fontWeight: "600",
+                  fontSize: "1.1rem",
+                  fontWeight: "700",
+                  fontFamily: '"Inter", "Roboto", Arial, sans-serif',
                   backgroundColor: "#64748b",
                   color: "#fff",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   gap: "0.5rem",
+                  transition: "all 0.2s ease",
                   boxShadow: "2px 4px 0 #181818",
+                  textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = "3px 6px 0 #181818";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "2px 4px 0 #181818";
                 }}
               >
                 Zur Startseite
@@ -284,33 +348,86 @@ const AdminSignup: React.FC = () => {
   }
 
   return (
-    <div className={styles.adminWrapper}>
+    <div
+      className={styles.adminWrapper}
+      role="main"
+      aria-label="Chaos Ops Organisation registrieren"
+    >
       <FlipchartBackground />
       <main
         className={styles.adminContent}
-        style={{ maxWidth: 600, margin: "0 auto", width: "100%" }}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "2rem",
+          padding: "2rem 1rem",
+          maxWidth: "700px",
+          margin: "0 auto",
+        }}
       >
         <div
           style={{
             background: "#fff",
             borderRadius: "1.2rem 1.35rem 1.15rem 1.25rem",
             boxShadow: "2px 4px 0 #e5e7eb, 0 2px 8px 0 rgba(0,0,0,0.08)",
-            padding: "2rem",
+            padding: "3rem 2rem",
             border: "2px solid #181818",
+            width: "100%",
+            position: "relative",
+            transform: "rotate(-0.2deg)",
+            zIndex: 1,
           }}
         >
+          {/* Tape */}
+          <div className={styles.tape} />
+          
+          <div
+            style={{
+              marginBottom: "2rem",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <img
+              src={chaosOpsLogo}
+              alt="Chaos Ops Logo"
+              style={{
+                maxWidth: "250px",
+                maxHeight: "100px",
+                width: "auto",
+                height: "auto",
+                filter: "drop-shadow(2px 4px 8px rgba(0,0,0,0.1))",
+              }}
+            />
+          </div>
           <h1
             style={{
               fontFamily:
                 '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
-              fontSize: "clamp(1.5rem, 4vw, 2rem)",
+              fontSize: "clamp(1.8rem, 4vw, 2.2rem)",
               fontWeight: 700,
               color: "#0f172a",
-              marginBottom: "1rem",
+              marginBottom: "0.5rem",
+              textAlign: "center",
             }}
           >
-            Organisation anlegen
+            Neue Organisation erstellen
           </h1>
+          
+          <p
+            style={{
+              fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+              fontSize: "1.1rem",
+              color: "#4a5568",
+              textAlign: "center",
+              marginBottom: "2rem",
+              lineHeight: "1.6",
+            }}
+          >
+            Erstelle deine Organisation und werde Administrator
+          </p>
           <form
             onSubmit={submit}
             style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
@@ -368,45 +485,115 @@ const AdminSignup: React.FC = () => {
               </p>
             </div>
             <div>
-              <label style={label}>Passwort</label>
-              <input
-                type="password"
-                style={input}
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-              />
+              <label style={label}>Passwort *</label>
+              <div style={{ position: "relative" }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  style={{
+                    ...input,
+                    paddingRight: "3rem",
+                  }}
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  placeholder="Mindestens 6 Zeichen"
+                  required
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: "absolute",
+                    right: "0.75rem",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: "0.25rem",
+                    color: "#6b7280",
+                  }}
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+              <small
+                style={{
+                  fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                  color: "#6b7280",
+                  fontSize: "0.85rem",
+                  marginTop: "0.25rem",
+                  display: "block",
+                }}
+              >
+                Mindestens 6 Zeichen für die Sicherheit
+              </small>
             </div>
             <button
               disabled={submitting}
               type="submit"
               style={{
-                padding: "0.9rem 1.25rem",
+                width: "100%",
+                padding: "1rem 2rem",
                 border: "2px solid #181818",
-                borderRadius: 8,
-                fontSize: "1rem",
-                fontWeight: 700,
-                background: "#10b981",
+                borderRadius: "8px",
+                fontSize: "1.1rem",
+                fontWeight: "700",
+                fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                background: submitting ? "#9ca3af" : "#10b981",
                 color: "#fff",
-                boxShadow: "2px 4px 0 #181818",
                 cursor: submitting ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.75rem",
+                transition: "all 0.2s ease",
+                boxShadow: "2px 4px 0 #181818",
+                textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+              }}
+              onMouseEnter={(e) => {
+                if (!submitting) {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = "3px 6px 0 #181818";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!submitting) {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "2px 4px 0 #181818";
+                }
               }}
             >
               {submitting ? "Wird erstellt…" : "Organisation erstellen"}
             </button>
-            <button
-              type="button"
-              onClick={() => navigate("/login")}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#2563eb",
-                textDecoration: "underline",
-                fontWeight: 700,
-                cursor: "pointer",
-              }}
-            >
-              Zurück zum Login
-            </button>
+            <div style={{ marginTop: "2rem", textAlign: "center" }}>
+              <p
+                style={{
+                  fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                  color: "#6b7280",
+                  fontSize: "0.9rem",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                Du hast bereits eine Organisation?
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate("/login")}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#3b82f6",
+                  textDecoration: "underline",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                  fontSize: "0.9rem",
+                }}
+              >
+                Hier anmelden
+              </button>
+            </div>
           </form>
         </div>
       </main>

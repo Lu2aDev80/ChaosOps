@@ -1,8 +1,10 @@
 import { Router } from 'express'
+import crypto from 'crypto'
 import prisma from '../../src/services/db'
 import { requireAuth } from '../middleware/session'
 import { sendMailSafe } from '../mailer'
 import { userInvitationEmail } from '../templates/userInvitationEmail'
+import { invitationEmail } from '../templates/invitationEmail'
 
 const router = Router()
 
@@ -114,11 +116,64 @@ router.get('/:id/users', requireAuth, async (req, res) => {
   }
 })
 
-// Invite user (create new user)
+// List pending invitations
+router.get('/:id/invitations', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params
+
+    if (req.user!.organisationId !== id) {
+      return res.status(403).json({ error: 'Access denied' })
+    }
+
+    if (req.user!.role !== 'admin') {
+      return res.status(403).json({ error: 'Only admins can view invitations' })
+    }
+
+    const invitations = await prisma.invitation.findMany({
+      where: { organisationId: id },
+      select: { id: true, email: true, role: true, invitedBy: true, expiresAt: true, createdAt: true },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    res.json(invitations)
+  } catch (error) {
+    console.error('Error fetching invitations:', error)
+    res.status(500).json({ error: 'Failed to fetch invitations' })
+  }
+})
+
+// Revoke invitation
+router.delete('/:id/invitations/:invitationId', requireAuth, async (req, res) => {
+  try {
+    const { id, invitationId } = req.params
+
+    if (req.user!.organisationId !== id) {
+      return res.status(403).json({ error: 'Access denied' })
+    }
+
+    if (req.user!.role !== 'admin') {
+      return res.status(403).json({ error: 'Only admins can revoke invitations' })
+    }
+
+    const invitation = await prisma.invitation.findUnique({ where: { id: invitationId } })
+    if (!invitation || invitation.organisationId !== id) {
+      return res.status(404).json({ error: 'Invitation not found' })
+    }
+
+    await prisma.invitation.delete({ where: { id: invitationId } })
+
+    res.json({ success: true, message: 'Invitation revoked' })
+  } catch (error) {
+    console.error('Error revoking invitation:', error)
+    res.status(500).json({ error: 'Failed to revoke invitation' })
+  }
+})
+
+// Invite user (create invitation with token)
 router.post('/:id/users', requireAuth, async (req, res) => {
   try {
     const { id } = req.params
-    const { username, email, password, role } = req.body
+    const { email, role } = req.body
 
     // Check if user belongs to this organisation and is admin
     if (req.user!.organisationId !== id) {
@@ -130,49 +185,61 @@ router.post('/:id/users', requireAuth, async (req, res) => {
     }
 
     // Validate input
-    if (!username || !email || !password) {
-      return res.status(400).json({ error: 'Username, email, and password are required' })
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' })
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' })
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' })
     }
 
-    // Check if user already exists
+    // Check if user already exists in this organisation
     const existingUser = await prisma.user.findFirst({
       where: {
         organisationId: id,
-        OR: [{ username }, { email }],
+        email,
       },
     })
 
     if (existingUser) {
       return res.status(400).json({
-        error: existingUser.username === username ? 'Username already taken' : 'Email already registered',
+        error: 'User with this email already exists in your organisation',
       })
     }
 
-    // Hash password
-    const bcrypt = require('bcryptjs')
-    const passwordHash = await bcrypt.hash(password, 10)
+    // Check if there's already a pending invitation
+    const existingInvitation = await prisma.invitation.findFirst({
+      where: {
+        organisationId: id,
+        email,
+      },
+    })
 
-    // Create user
-    const newUser = await prisma.user.create({
+    if (existingInvitation) {
+      // Delete the old invitation and create a new one
+      await prisma.invitation.delete({
+        where: { id: existingInvitation.id },
+      })
+    }
+
+    // Generate secure random token
+    const token = crypto.randomBytes(32).toString('hex')
+
+    // Set expiration to 7 days from now
+    const expiresAt = new Date()
+    expiresAt.setDate(expiresAt.getDate() + 7)
+
+    // Create invitation
+    const invitation = await prisma.invitation.create({
       data: {
         organisationId: id,
-        username,
         email,
-        passwordHash,
         role: role === 'admin' ? 'admin' : 'member',
-        emailVerified: false,
-      },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        role: true,
-        emailVerified: true,
-        createdAt: true,
+        token,
+        expiresAt,
+        invitedBy: req.user!.username,
       },
     })
 
@@ -182,27 +249,34 @@ router.post('/:id/users', requireAuth, async (req, res) => {
       select: { name: true },
     })
 
-    // Send invitation email
+    // Build invitation URL
     const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
-    const loginUrl = `${baseUrl}/login`
+    const invitationUrl = `${baseUrl}/minihackathon/accept-invitation?token=${token}`
     
     const emailSent = await sendMailSafe({
       to: email,
-      subject: `Welcome to ${organisation?.name || 'KonfiDayPlaner'}`,
-      html: userInvitationEmail(
-        username,
+      subject: `You're invited to join ${organisation?.name || 'KonfiDayPlaner'}`,
+      html: invitationEmail(
+        email,
         organisation?.name || 'KonfiDayPlaner',
         req.user!.username,
-        password, // Send the plain password in the email (they'll need to change it)
-        loginUrl
+        invitationUrl,
+        role === 'admin' ? 'Admin' : 'Member'
       ),
     })
 
     if (!emailSent) {
-      console.warn('Failed to send invitation email, but user was created')
+      // If email fails, delete the invitation
+      await prisma.invitation.delete({ where: { id: invitation.id } })
+      return res.status(500).json({ error: 'Failed to send invitation email' })
     }
 
-    res.status(201).json(newUser)
+    res.status(201).json({
+      message: 'Invitation sent successfully',
+      email: invitation.email,
+      role: invitation.role,
+      expiresAt: invitation.expiresAt,
+    })
   } catch (error) {
     console.error('Error inviting user:', error)
     res.status(500).json({ error: 'Failed to invite user' })

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import FlipchartBackground from '../components/layout/FlipchartBackground';
 import { ConfirmModal } from '../components/ui';
+import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import styles from './Admin.module.css';
 
@@ -30,10 +31,14 @@ type UserDetails = {
 const OrganisationSettings: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const orgId = searchParams.get('org');
+  
+  const isAdmin = user?.role === 'admin';
 
   // State management
   const [users, setUsers] = useState<UserDetails[]>([]);
+  const [invitations, setInvitations] = useState<Array<{id: string; email: string; role: 'admin'|'member'; invitedBy: string; expiresAt: string; createdAt: string}>>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -46,9 +51,7 @@ const OrganisationSettings: React.FC = () => {
 
   // Invite user form
   const [showInviteForm, setShowInviteForm] = useState(false);
-  const [inviteUsername, setInviteUsername] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
-  const [invitePassword, setInvitePassword] = useState('');
   const [inviteRole, setInviteRole] = useState<'admin' | 'member'>('member');
 
   // Delete confirmation
@@ -72,9 +75,10 @@ const OrganisationSettings: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [orgData, usersData] = await Promise.all([
+      const [orgData, usersData, invitationsData] = await Promise.all([
         api.getOrganisation(orgId!),
         api.getOrganisationUsers(orgId!),
+        api.getOrganisationInvitations(orgId!),
       ]);
       
       setOrgName(orgData.name);
@@ -86,6 +90,10 @@ const OrganisationSettings: React.FC = () => {
         email: u.email || '',
         emailVerified: u.emailVerified ?? false,
         createdAt: u.createdAt || new Date().toISOString(),
+      })));
+      setInvitations(invitationsData.map(i => ({
+        ...i,
+        role: (i.role as 'admin'|'member'),
       })));
     } catch (err: any) {
       setError(err.message || 'Failed to load organisation data');
@@ -134,22 +142,24 @@ const OrganisationSettings: React.FC = () => {
     try {
       setSaving(true);
       setError(null);
-      await api.inviteUser(orgId!, {
-        username: inviteUsername,
+      const result = await api.inviteUser(orgId!, {
         email: inviteEmail,
-        password: invitePassword,
         role: inviteRole,
       });
-      setSuccessMessage('User invited successfully!');
+      setSuccessMessage(`Einladung gesendet an ${result.email}!`);
       setTimeout(() => setSuccessMessage(null), 3000);
       setShowInviteForm(false);
-      setInviteUsername('');
       setInviteEmail('');
-      setInvitePassword('');
       setInviteRole('member');
-      await loadData();
+      
+      // Reload invitations to show the new pending invitation immediately
+      const invitationsData = await api.getOrganisationInvitations(orgId!);
+      setInvitations(invitationsData.map(i => ({
+        ...i,
+        role: (i.role as 'admin'|'member'),
+      })));
     } catch (err: any) {
-      setError(err.message || 'Failed to invite user');
+      setError(err.message || 'Einladung konnte nicht gesendet werden');
     } finally {
       setSaving(false);
     }
@@ -334,23 +344,24 @@ const OrganisationSettings: React.FC = () => {
           </div>
         )}
 
-        {/* Organisation Details Section */}
-        <div style={{ ...cardStyle, marginBottom: '2rem' }}>
-          <h2
-            style={{
-              fontFamily: '"Gloria Hallelujah", "Caveat", cursive',
-              fontSize: '1.5rem',
-              fontWeight: '700',
-              color: '#0f172a',
-              marginBottom: '1.5rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-            }}
-          >
-            <Building2 size={24} />
-            Organisation Details
-          </h2>
+        {/* Organisation Details Section - Only for Admins */}
+        {isAdmin && (
+          <div style={{ ...cardStyle, marginBottom: '2rem' }}>
+            <h2
+              style={{
+                fontFamily: '"Gloria Hallelujah", "Caveat", cursive',
+                fontSize: '1.5rem',
+                fontWeight: '700',
+                color: '#0f172a',
+                marginBottom: '1.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+              }}
+            >
+              <Building2 size={24} />
+              Organisation Details
+            </h2>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <div>
@@ -426,10 +437,11 @@ const OrganisationSettings: React.FC = () => {
               }}
             >
               <Save size={18} />
-              {saving ? 'Saving...' : 'Save Changes'}
+              {saving ? 'Wird gespeichert...' : 'Änderungen speichern'}
             </button>
           </div>
         </div>
+        )}
 
         {/* User Management Section */}
         <div style={{ ...cardStyle, marginBottom: '2rem' }}>
@@ -458,6 +470,7 @@ const OrganisationSettings: React.FC = () => {
               <Users size={24} />
               Users ({users.length})
             </h2>
+            {isAdmin && (
             <button
               onClick={() => setShowInviteForm(!showInviteForm)}
               style={{
@@ -468,12 +481,13 @@ const OrganisationSettings: React.FC = () => {
               }}
             >
               <UserPlus size={18} />
-              Invite User
+              Benutzer einladen
             </button>
+            )}
           </div>
 
-          {/* Invite User Form */}
-          {showInviteForm && (
+          {/* Invite User Form - Only for Admins */}
+          {isAdmin && showInviteForm && (
             <form
               onSubmit={handleInviteUser}
               style={{
@@ -495,55 +509,33 @@ const OrganisationSettings: React.FC = () => {
                   marginBottom: '0.5rem',
                 }}
               >
-                Invite New User
+                Neuen Benutzer einladen
               </h3>
+              <p style={{ margin: '0 0 1rem 0', color: '#78716c', fontSize: '0.9rem' }}>
+                Der Benutzer erhält eine E-Mail mit einem Einladungslink, um sein Konto zu erstellen.
+              </p>
 
               <div>
-                <label style={labelStyle}>Username</label>
-                <input
-                  type="text"
-                  value={inviteUsername}
-                  onChange={(e) => setInviteUsername(e.target.value)}
-                  style={inputStyle}
-                  placeholder="Enter username"
-                  required
-                />
-              </div>
-
-              <div>
-                <label style={labelStyle}>Email</label>
+                <label style={labelStyle}>E-Mail</label>
                 <input
                   type="email"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   style={inputStyle}
-                  placeholder="Enter email"
+                  placeholder="benutzer@beispiel.de"
                   required
                 />
               </div>
 
               <div>
-                <label style={labelStyle}>Password</label>
-                <input
-                  type="password"
-                  value={invitePassword}
-                  onChange={(e) => setInvitePassword(e.target.value)}
-                  style={inputStyle}
-                  placeholder="Enter initial password"
-                  required
-                  minLength={6}
-                />
-              </div>
-
-              <div>
-                <label style={labelStyle}>Role</label>
+                <label style={labelStyle}>Rolle</label>
                 <select
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value as 'admin' | 'member')}
                   style={inputStyle}
                 >
-                  <option value="member">Member</option>
-                  <option value="admin">Admin</option>
+                  <option value="member">Mitglied</option>
+                  <option value="admin">Administrator</option>
                 </select>
               </div>
 
@@ -560,7 +552,7 @@ const OrganisationSettings: React.FC = () => {
                   }}
                 >
                   <UserPlus size={18} />
-                  {saving ? 'Inviting...' : 'Invite User'}
+                  {saving ? 'Wird eingeladen...' : 'Benutzer einladen'}
                 </button>
                 <button
                   type="button"
@@ -575,7 +567,7 @@ const OrganisationSettings: React.FC = () => {
                     justifyContent: 'center',
                   }}
                 >
-                  Cancel
+                  Abbrechen
                 </button>
               </div>
             </form>
@@ -593,7 +585,7 @@ const OrganisationSettings: React.FC = () => {
                   color: '#64748b',
                 }}
               >
-                No users yet. Invite users to get started!
+                Noch keine Benutzer. Lade Benutzer ein, um zu beginnen!
               </div>
             ) : (
               users.map((user) => (
@@ -654,46 +646,126 @@ const OrganisationSettings: React.FC = () => {
                       <Mail size={14} />
                       {user.email}
                       {user.emailVerified ? (
-                        <span style={{ color: '#10b981', fontSize: '0.85rem' }}>✓ Verified</span>
+                        <span style={{ color: '#10b981', fontSize: '0.85rem' }}>✓ Bestätigt</span>
                       ) : (
-                        <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>✗ Not verified</span>
+                        <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>✗ Nicht bestätigt</span>
                       )}
                     </div>
                   </div>
 
-                  <button
-                    onClick={() =>
-                      setDeleteConfirm({
-                        isOpen: true,
-                        userId: user.id,
-                        username: user.username,
-                      })
-                    }
-                    style={{
-                      padding: '0.5rem 1rem',
-                      border: '2px solid #ef4444',
-                      borderRadius: '6px',
-                      backgroundColor: '#fef2f2',
-                      color: '#dc2626',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      fontSize: '0.9rem',
-                      fontWeight: '600',
-                      fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                    }}
-                  >
-                    <UserMinus size={16} />
-                    Remove
-                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() =>
+                        setDeleteConfirm({
+                          isOpen: true,
+                          userId: user.id,
+                          username: user.username,
+                        })
+                      }
+                      style={{
+                        padding: '0.5rem 1rem',
+                        border: '2px solid #ef4444',
+                        borderRadius: '6px',
+                        backgroundColor: '#fef2f2',
+                        color: '#dc2626',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                      }}
+                    >
+                      <UserMinus size={16} />
+                      Entfernen
+                    </button>
+                  )}
                 </div>
               ))
             )}
           </div>
         </div>
 
-        {/* Manage Screens Section - Placeholder */}
+        {/* Pending Invitations - Only for Admins */}
+        {isAdmin && (
+        <div style={{ ...cardStyle, marginTop: '2rem' }}>
+          <h3 style={{
+            fontFamily: '"Gloria Hallelujah", "Caveat", cursive',
+            fontSize: '1.2rem',
+            margin: 0,
+            marginBottom: '0.75rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+          }}>
+            <Mail size={18} /> Ausstehende Einladungen ({invitations.length})
+          </h3>
+
+          {invitations.length === 0 ? (
+            <div style={{
+              padding: '1rem',
+              border: '2px dashed #cbd5e1',
+              borderRadius: '12px',
+              color: '#64748b',
+              background: '#f8fafc',
+            }}>
+              Keine ausstehenden Einladungen.
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              {invitations.map((inv) => (
+                <div key={inv.id} style={{
+                  padding: '1rem',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '12px',
+                  background: '#fff',
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700 }}>{inv.email}</div>
+                      <div style={{ fontSize: '0.9rem', color: '#64748b' }}>Rolle: {inv.role === 'admin' ? 'Admin' : 'Mitglied'}</div>
+                      <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Eingeladen von {inv.invitedBy}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Läuft ab am {new Date(inv.expiresAt).toLocaleDateString()}</div>
+                      <button
+                        onClick={async () => {
+                          try {
+                            setSaving(true);
+                            setError(null);
+                            await api.revokeInvitation(orgId!, inv.id);
+                            setSuccessMessage('Einladung widerrufen');
+                            setTimeout(() => setSuccessMessage(null), 2500);
+                            await loadData();
+                          } catch (err: any) {
+                            setError(err.message || 'Einladung konnte nicht widerrufen werden');
+                          } finally {
+                            setSaving(false);
+                          }
+                        }}
+                        style={{
+                          ...buttonStyle,
+                          backgroundColor: '#fef2f2',
+                          color: '#dc2626',
+                          border: '2px solid #dc2626',
+                          boxShadow: '2px 4px 0 #dc2626',
+                          padding: '0.5rem 0.75rem',
+                        }}
+                      >
+                        Widerrufen
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        )}
+
+        {/* Manage Screens Section - Placeholder - Only for Admins */}
+        {isAdmin && (
         <div style={cardStyle}>
           <h2
             style={{
@@ -708,7 +780,7 @@ const OrganisationSettings: React.FC = () => {
             }}
           >
             <Monitor size={24} />
-            Manage Screens
+            Bildschirm-Verwaltung
           </h2>
           <div
             style={{
@@ -720,22 +792,25 @@ const OrganisationSettings: React.FC = () => {
               fontFamily: '"Inter", "Roboto", Arial, sans-serif',
             }}
           >
-            Screen management coming soon! This will allow you to manage display screens for your organisation.
+            Bildschirm-Verwaltung kommt bald! Hier kannst du Display-Screens für deine Organisation verwalten.
           </div>
         </div>
+        )}
       </main>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal - Only show for admins */}
+      {isAdmin && (
       <ConfirmModal
         isOpen={deleteConfirm.isOpen}
         onClose={() => setDeleteConfirm({ isOpen: false, userId: '', username: '' })}
         onConfirm={() => handleRemoveUser(deleteConfirm.userId)}
-        title="Remove User"
-        message={`Are you sure you want to remove ${deleteConfirm.username} from this organisation?`}
-        confirmText="Remove"
-        cancelText="Cancel"
+        title="Benutzer entfernen"
+        message={`Bist du sicher, dass du ${deleteConfirm.username} aus dieser Organisation entfernen möchtest?`}
+        confirmText="Entfernen"
+        cancelText="Abbrechen"
         type="error"
       />
+      )}
     </div>
   );
 };

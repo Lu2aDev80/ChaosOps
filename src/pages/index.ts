@@ -7,3 +7,4 @@ export { default as Home } from './Home';
 export { default as OrganisationSettings } from './OrganisationSettings';
 export { default as PlannerPage } from './PlannerPage';
 export { default as VerifyEmail } from "./VerifyEmail";
+export { default as AcceptInvitation } from "./AcceptInvitation";

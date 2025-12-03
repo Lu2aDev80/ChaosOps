@@ -367,4 +367,133 @@ router.post("/resend-verification", async (req, res) => {
   }
 });
 
+// Accept invitation
+router.post("/accept-invitation", async (req, res) => {
+  const { token, username, password } = req.body ?? {};
+  
+  if (!token || !username || !password) {
+    return res.status(400).json({ error: "Token, username, and password are required" });
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({ error: "Password must be at least 6 characters" });
+  }
+
+  try {
+    // Find invitation by token
+    const invitation = await prisma.invitation.findUnique({
+      where: { token },
+      include: { organisation: true },
+    });
+
+    if (!invitation) {
+      return res.status(404).json({ error: "Invalid invitation token" });
+    }
+
+    // Check if invitation has expired
+    if (dayjs().isAfter(invitation.expiresAt)) {
+      await prisma.invitation.delete({ where: { id: invitation.id } });
+      return res.status(410).json({ error: "Invitation has expired" });
+    }
+
+    // Check if username already exists in the organisation
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        organisationId: invitation.organisationId,
+        username,
+      },
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ error: "Username already taken in this organisation" });
+    }
+
+    // Hash password
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    // Create user and delete invitation in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Create the user
+      const user = await tx.user.create({
+        data: {
+          organisationId: invitation.organisationId,
+          username,
+          email: invitation.email,
+          passwordHash,
+          role: invitation.role,
+          emailVerified: true, // User came from email link, so email is verified
+        },
+      });
+
+      // Delete the invitation
+      await tx.invitation.delete({
+        where: { id: invitation.id },
+      });
+
+      return { user };
+    });
+
+    // Create session
+    const { token: sessionToken, expiresAt } = await createSession(result.user.id);
+    setSessionCookie(res, sessionToken, expiresAt);
+
+    res.status(201).json({
+      message: "Account created successfully",
+      user: {
+        id: result.user.id,
+        username: result.user.username,
+        email: result.user.email,
+        role: result.user.role,
+        emailVerified: result.user.emailVerified,
+      },
+      organisation: {
+        id: invitation.organisation.id,
+        name: invitation.organisation.name,
+        description: invitation.organisation.description,
+      },
+    });
+  } catch (err: any) {
+    logger.error("accept invitation error", err);
+    res.status(500).json({ error: "Internal error" });
+  }
+});
+
+// Validate invitation token
+router.post("/validate-invitation", async (req, res) => {
+  const { token } = req.body ?? {};
+  
+  if (!token) {
+    return res.status(400).json({ error: "Token is required" });
+  }
+
+  try {
+    const invitation = await prisma.invitation.findUnique({
+      where: { token },
+      include: { organisation: true },
+    });
+
+    if (!invitation) {
+      return res.status(404).json({ error: "Invalid invitation token" });
+    }
+
+    if (dayjs().isAfter(invitation.expiresAt)) {
+      await prisma.invitation.delete({ where: { id: invitation.id } });
+      return res.status(410).json({ error: "Invitation has expired" });
+    }
+
+    res.json({
+      valid: true,
+      email: invitation.email,
+      role: invitation.role,
+      organisation: {
+        id: invitation.organisation.id,
+        name: invitation.organisation.name,
+      },
+    });
+  } catch (err: any) {
+    logger.error("validate invitation error", err);
+    res.status(500).json({ error: "Internal error" });
+  }
+});
+
 export default router

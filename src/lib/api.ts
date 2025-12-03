@@ -31,10 +31,13 @@ export type UpdateOrganisationData = {
   logoUrl?: string;
 };
 export type InviteUserData = {
-  username: string;
   email: string;
-  password: string;
   role: "admin" | "member";
+};
+export type AcceptInvitationResponse = {
+  message: string;
+  user: Pick<User, "id" | "username" | "email" | "role" | "emailVerified">;
+  organisation: Organisation;
 };
 
 // Get API base URL from environment or default to relative path with base path
@@ -94,8 +97,16 @@ export const api = {
   getOrganisationUsers(organisationId: string): Promise<User[]> {
     return json<User[]>(`/api/organisations/${organisationId}/users`);
   },
-  inviteUser(organisationId: string, data: InviteUserData): Promise<User> {
-    return json<User>(`/api/organisations/${organisationId}/users`, {
+  getOrganisationInvitations(organisationId: string): Promise<Array<{id: string; email: string; role: string; invitedBy: string; expiresAt: string; createdAt: string}>> {
+    return json<Array<{id: string; email: string; role: string; invitedBy: string; expiresAt: string; createdAt: string}>>(`/api/organisations/${organisationId}/invitations`);
+  },
+  revokeInvitation(organisationId: string, invitationId: string): Promise<{success: boolean; message: string}> {
+    return json<{success: boolean; message: string}>(`/api/organisations/${organisationId}/invitations/${invitationId}`, {
+      method: "DELETE",
+    });
+  },
+  inviteUser(organisationId: string, data: InviteUserData): Promise<{message: string; email: string; role: string; expiresAt: string}> {
+    return json<{message: string; email: string; role: string; expiresAt: string}>(`/api/organisations/${organisationId}/users`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -151,6 +162,20 @@ export const api = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, organisationId }),
+    });
+  },
+  acceptInvitation(token: string, username: string, password: string): Promise<AcceptInvitationResponse> {
+    return json<AcceptInvitationResponse>("/api/auth/accept-invitation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, username, password }),
+    });
+  },
+  validateInvitation(token: string): Promise<{valid: boolean; email: string; role: string; organisation: {id: string; name: string}}> {
+    return json<{valid: boolean; email: string; role: string; organisation: {id: string; name: string}}>("/api/auth/validate-invitation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
     });
   },
 };
