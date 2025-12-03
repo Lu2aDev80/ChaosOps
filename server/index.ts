@@ -5,6 +5,7 @@ import cors from 'cors'
 import path from 'path'
 import authRoutes from './routes/auth'
 import organisationsRoutes from './routes/organisations'
+import eventsRoutes from './routes/events'
 import emailRoutes from "./routes/email";
 import uploadRoutes from './routes/upload';
 import { logger } from "./logger";
@@ -78,6 +79,7 @@ app.get(`${apiBase}/health`, (_req: Request, res: Response) => {
 
 // Routes
 app.use(`${apiBase}/organisations`, organisationsRoutes);
+app.use(`${apiBase}`, eventsRoutes);
 app.use(`${apiBase}/auth`, authRoutes);
 app.use(`${apiBase}/email`, emailRoutes);
 app.use(`${apiBase}/upload`, uploadRoutes);

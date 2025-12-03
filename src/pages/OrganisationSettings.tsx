@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Building2,
@@ -34,17 +34,12 @@ const OrganisationSettings: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const orgId = searchParams.get('org');
   
-  // Check if user is admin - ensure user is loaded and has admin role
-  const isAdmin = !authLoading && user?.role === 'admin' && user?.organisationId === orgId;
+  // Derived state
+  const isAdmin = useMemo(() => (
+    !authLoading && user?.role === 'admin' && user?.organisationId === orgId
+  ), [authLoading, user, orgId]);
   
-  // Debug logging
-  console.log('OrganisationSettings Debug:', {
-    user,
-    authLoading,
-    isAdmin,
-    userRole: user?.role,
-    orgId
-  });
+  // Debug logging removed for cleanliness
 
   // State management
   const [users, setUsers] = useState<UserDetails[]>([]);
@@ -74,15 +69,9 @@ const OrganisationSettings: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!orgId) {
-      navigate('/admin/dashboard');
-      return;
-    }
-    loadData();
-  }, [orgId, navigate]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
+    if (!orgId) return;
+    
     try {
       setLoading(true);
       const [orgData, usersData, invitationsData] = await Promise.all([
@@ -91,17 +80,20 @@ const OrganisationSettings: React.FC = () => {
         api.getOrganisationInvitations(orgId!),
       ]);
       
-      setOrgName(orgData.name);
-      setOrgDescription(orgData.description || '');
-      setLogoUrl(orgData.logoUrl || '');
-      // Set logo preview with full URL if logoUrl exists
-      if (orgData.logoUrl) {
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/minihackathon';
-        const fullLogoUrl = orgData.logoUrl.startsWith('http') ? orgData.logoUrl : `${API_BASE_URL}${orgData.logoUrl}`;
-        setLogoPreview(fullLogoUrl);
-      } else {
-        setLogoPreview('');
-      }
+      setOrgName(orgData.name ?? '');
+      setOrgDescription(orgData.description ?? '');
+      const rawLogo = orgData.logoUrl ?? '';
+      setLogoUrl(rawLogo);
+      // Build preview URL
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/minihackathon';
+      const fullLogoUrl = !rawLogo
+        ? ''
+        : rawLogo.startsWith('http')
+          ? rawLogo
+          : rawLogo.startsWith('/uploads')
+            ? rawLogo
+            : `${API_BASE_URL}${rawLogo}`;
+      setLogoPreview(fullLogoUrl);
       setUsers(usersData.map(u => ({
         ...u,
         email: u.email || '',
@@ -117,9 +109,24 @@ const OrganisationSettings: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [orgId]);
 
-  const handleSaveOrganisation = async () => {
+  useEffect(() => {
+    if (!orgId) {
+      navigate('/admin/dashboard');
+      return;
+    }
+    loadData();
+  }, [orgId, loadData, navigate]);
+
+  // If user is not authenticated, redirect to login
+  useEffect(() => {
+    if (!user && !authLoading) {
+      navigate('/login');
+    }
+  }, [user, authLoading, navigate]);
+
+  const handleSaveOrganisation = useCallback(async () => {
     try {
       setSaving(true);
       setError(null);
@@ -152,9 +159,9 @@ const OrganisationSettings: React.FC = () => {
     } finally {
       setSaving(false);
     }
-  };
+  }, [orgId, orgName, orgDescription, logoUrl, logoFile, loadData]);
 
-  const handleInviteUser = async (e: React.FormEvent) => {
+  const handleInviteUser = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setSaving(true);
@@ -180,9 +187,9 @@ const OrganisationSettings: React.FC = () => {
     } finally {
       setSaving(false);
     }
-  };
+  }, [orgId, inviteEmail, inviteRole]);
 
-  const handleRemoveUser = async (userId: string) => {
+  const handleRemoveUser = useCallback(async (userId: string) => {
     try {
       setSaving(true);
       setError(null);
@@ -196,9 +203,9 @@ const OrganisationSettings: React.FC = () => {
     } finally {
       setSaving(false);
     }
-  };
+  }, [orgId, loadData]);
 
-  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       // Validate file type
@@ -224,7 +231,7 @@ const OrganisationSettings: React.FC = () => {
       reader.readAsDataURL(file);
       setError(null);
     }
-  };
+  }, []);
 
   const cardStyle = {
     background: '#fff',
@@ -281,9 +288,8 @@ const OrganisationSettings: React.FC = () => {
     );
   }
 
-  // If user is not authenticated, redirect to login
+  // If user is not authenticated, redirect to login (already handled above)
   if (!user) {
-    navigate('/login');
     return null;
   }
 
@@ -427,17 +433,36 @@ const OrganisationSettings: React.FC = () => {
               
               {logoPreview && (
                 <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-                  <img
-                    src={logoPreview}
-                    alt="Organisation Logo Preview"
-                    style={{
-                      maxWidth: '300px',
-                      maxHeight: '150px',
-                      border: '2px solid #cbd5e1',
+                  {logoPreview ? (
+                    <img
+                      src={logoPreview}
+                      alt="Organisation Logo Preview"
+                      onError={() => setLogoPreview('')}
+                      style={{
+                        maxWidth: '300px',
+                        maxHeight: '150px',
+                        border: '2px solid #cbd5e1',
+                        borderRadius: '8px',
+                        objectFit: 'contain',
+                      }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: '300px',
+                      height: '150px',
+                      border: '2px dashed #cbd5e1',
                       borderRadius: '8px',
-                      objectFit: 'contain',
-                    }}
-                  />
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#94a3b8',
+                      fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                      fontSize: '0.9rem',
+                      margin: '0 auto'
+                    }}>
+                      Kein Logo vorhanden
+                    </div>
+                  )}
                   <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.5rem' }}>
                     {logoFile ? 'New logo selected' : 'Current logo'}
                   </p>

@@ -15,6 +15,7 @@ import {
 import EventForm from "../components/forms/EventForm";
 import DayPlanForm from "../components/forms/DayPlanForm";
 import ScheduleManager from "../components/planner/ScheduleManager";
+import EventCreationWizard from "../components/forms/EventCreationWizard";
 import FlipchartBackground from "../components/layout/FlipchartBackground";
 import { ConfirmModal } from "../components/ui";
 import type { Event, DayPlan } from "../types/event";
@@ -36,6 +37,7 @@ const Dashboard: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [showEventForm, setShowEventForm] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [showDayPlanForm, setShowDayPlanForm] = useState(false);
   const [editingDayPlan, setEditingDayPlan] = useState<DayPlan | null>(null);
@@ -65,49 +67,64 @@ const Dashboard: React.FC = () => {
   }, [orgId]);
 
   useEffect(() => {
-    if (!orgId) {
-      navigate(basePath);
-      return;
-    }
+    const loadEvents = async () => {
+      if (!orgId) {
+        navigate(basePath);
+        return;
+      }
 
-    // Load events from localStorage
-    const storedEvents = localStorage.getItem(`events_${orgId}`);
-    if (storedEvents) {
-      const parsed = JSON.parse(storedEvents);
-      setEvents(
-        parsed.map((e: any) => ({
-          ...e,
-          createdAt: new Date(e.createdAt),
-          updatedAt: new Date(e.updatedAt),
-          dayPlans: e.dayPlans.map((d: any) => ({
-            ...d,
-            createdAt: new Date(d.createdAt),
-            updatedAt: new Date(d.updatedAt),
-          })),
-        }))
-      );
+      try {
+        const serverEvents = await api.listEvents(orgId)
+        setEvents(
+          serverEvents.map((e: any) => ({
+            ...e,
+            createdAt: new Date(e.createdAt),
+            updatedAt: new Date(e.updatedAt),
+            dayPlans: (e.dayPlans || []).map((d: any) => ({
+              ...d,
+              createdAt: new Date(d.createdAt),
+              updatedAt: new Date(d.updatedAt),
+              schedule: (d.scheduleItems || []).map((si: any) => ({
+                id: si.id,
+                time: si.time,
+                type: si.type,
+                title: si.title,
+              })),
+            })),
+          }))
+        )
+      } catch (err) {
+        console.error('Failed to fetch events', err)
+      }
     }
-  }, [orgId, navigate]);
+    loadEvents()
+  }, [orgId, navigate, basePath]);
 
-  // Save events to localStorage
-  const saveEvents = (updatedEvents: Event[]) => {
-    setEvents(updatedEvents);
-    localStorage.setItem(`events_${orgId}`, JSON.stringify(updatedEvents));
+  // Update events state only
+  const setEventsState = (updatedEvents: Event[]) => {
+    setEvents(updatedEvents)
   };
 
   // Event CRUD operations
-  const handleCreateEvent = (
+  const handleCreateEvent = async (
     eventData: Omit<Event, "id" | "createdAt" | "updatedAt" | "dayPlans">
   ) => {
-    const newEvent: Event = {
-      ...eventData,
-      id: `evt_${Date.now()}`,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      dayPlans: [],
-    };
-    saveEvents([...events, newEvent]);
-    setShowEventForm(false);
+    try {
+      const created = await api.createEvent(orgId!, { name: eventData.name, description: eventData.description })
+      const newEvent: Event = {
+        id: created.id,
+        name: created.name,
+        description: created.description,
+        organizationId: orgId!,
+        createdAt: new Date(created.createdAt),
+        updatedAt: new Date(created.updatedAt),
+        dayPlans: [],
+      }
+      setEventsState([...events, newEvent])
+      setShowEventForm(false)
+    } catch (err) {
+      console.error('Create event failed', err)
+    }
   };
 
   const handleUpdateEvent = (
@@ -120,7 +137,7 @@ const Dashboard: React.FC = () => {
         ? { ...e, ...eventData, updatedAt: new Date() }
         : e
     );
-    saveEvents(updatedEvents);
+    setEventsState(updatedEvents);
     setEditingEvent(null);
     setShowEventForm(false);
   };
@@ -131,7 +148,7 @@ const Dashboard: React.FC = () => {
 
   const confirmDeleteEvent = () => {
     const eventId = deleteConfirm.id;
-    saveEvents(events.filter((e) => e.id !== eventId));
+    setEventsState(events.filter((e) => e.id !== eventId));
     if (selectedEvent?.id === eventId) {
       setSelectedEvent(null);
     }
@@ -139,28 +156,33 @@ const Dashboard: React.FC = () => {
   };
 
   // DayPlan CRUD operations
-  const handleCreateDayPlan = (
+  const handleCreateDayPlan = async (
     dayPlanData: Omit<DayPlan, "id" | "createdAt" | "updatedAt">
   ) => {
     if (!selectedEvent) return;
+    try {
+      const created = await api.createDayPlan(selectedEvent.id, { name: dayPlanData.name, date: dayPlanData.date, schedule: dayPlanData.schedule })
+      const newDayPlan: DayPlan = {
+        id: created.id,
+        eventId: selectedEvent.id,
+        name: created.name,
+        date: created.date,
+        schedule: (created.scheduleItems || []).map((si: any) => ({ id: si.id, time: si.time, type: si.type, title: si.title })),
+        createdAt: new Date(created.createdAt),
+        updatedAt: new Date(created.updatedAt),
+      }
 
-    const newDayPlan: DayPlan = {
-      ...dayPlanData,
-      id: `day_${Date.now()}`,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    const updatedEvents = events.map((e) =>
-      e.id === selectedEvent.id
-        ? { ...e, dayPlans: [...e.dayPlans, newDayPlan], updatedAt: new Date() }
-        : e
-    );
-    saveEvents(updatedEvents);
-    setSelectedEvent(
-      updatedEvents.find((e) => e.id === selectedEvent.id) || null
-    );
-    setShowDayPlanForm(false);
+      const updatedEvents = events.map((e) =>
+        e.id === selectedEvent.id
+          ? { ...e, dayPlans: [...e.dayPlans, newDayPlan], updatedAt: new Date() }
+          : e
+      );
+      setEventsState(updatedEvents);
+      setSelectedEvent(updatedEvents.find((e) => e.id === selectedEvent.id) || null);
+      setShowDayPlanForm(false);
+    } catch (err) {
+      console.error('Create day plan failed', err)
+    }
   };
 
   const handleUpdateDayPlan = (
@@ -181,7 +203,7 @@ const Dashboard: React.FC = () => {
           }
         : e
     );
-    saveEvents(updatedEvents);
+    setEventsState(updatedEvents);
     setSelectedEvent(
       updatedEvents.find((e) => e.id === selectedEvent.id) || null
     );
@@ -206,7 +228,7 @@ const Dashboard: React.FC = () => {
           }
         : e
     );
-    saveEvents(updatedEvents);
+    setEventsState(updatedEvents);
     setSelectedEvent(
       updatedEvents.find((e) => e.id === selectedEvent.id) || null
     );
@@ -236,7 +258,7 @@ const Dashboard: React.FC = () => {
           }
         : e
     );
-    saveEvents(updatedEvents);
+    setEventsState(updatedEvents);
     setSelectedEvent(
       updatedEvents.find((e) => e.id === selectedEvent.id) || null
     );
@@ -275,6 +297,20 @@ const Dashboard: React.FC = () => {
           }}
         />
       </div>
+    );
+  }
+
+  if (showWizard) {
+    return (
+      <EventCreationWizard
+        organizationId={orgId!}
+        onClose={() => setShowWizard(false)}
+        onCreated={(newEvent) => {
+          setEventsState([...events, newEvent]);
+          setSelectedEvent(newEvent);
+          setShowWizard(false);
+        }}
+      />
     );
   }
 
@@ -510,7 +546,7 @@ const Dashboard: React.FC = () => {
                 Veranstaltungen ({events.length})
               </h2>
               <button
-                onClick={() => setShowEventForm(true)}
+                onClick={() => setShowWizard(true)}
                 style={{
                   ...buttonStyle,
                   backgroundColor: "#fbbf24",

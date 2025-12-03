@@ -1,24 +1,18 @@
 import React from 'react';
-import { Outlet, useLocation, Navigate } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import FlipchartBackground from '../components/layout/FlipchartBackground';
 import styles from './Admin.module.css';
 
 const Admin: React.FC = () => {
-  const location = useLocation();
-  const isRootAdmin = location.pathname === "/admin";
+  // Admin layout renders nested routes
 
   return (
     <div className={styles.adminWrapper} role="main" aria-label="Admin Bereich">
       <FlipchartBackground />
 
       <main className={styles.adminContent}>
-        {isRootAdmin ? (
-          // Redirect to login page for organization selection
-          <Navigate to="/login" replace />
-        ) : (
-          // Show dashboard content
-          <Outlet />
-        )}
+        {/* Always render nested admin routes; handle selection within pages */}
+        <Outlet />
       </main>
     </div>
   );

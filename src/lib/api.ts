@@ -178,4 +178,22 @@ export const api = {
       body: JSON.stringify({ token }),
     });
   },
+  // Events
+  listEvents(organisationId: string): Promise<any[]> {
+    return json<any[]>(`/api/organisations/${organisationId}/events`)
+  },
+  createEvent(organisationId: string, data: { name: string; description?: string }): Promise<any> {
+    return json<any>(`/api/organisations/${organisationId}/events`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+  },
+  createDayPlan(eventId: string, data: { name: string; date: string; schedule?: Array<any> }): Promise<any> {
+    return json<any>(`/api/events/${eventId}/day-plans`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+  },
 };
