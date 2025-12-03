@@ -17,10 +17,11 @@ async function createSession(userId: string) {
 }
 
 function setSessionCookie(res: any, token: string, expiresAt: Date) {
+  const isProduction = process.env.NODE_ENV === 'production';
   res.cookie("sid", token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: false,
+    secure: isProduction, // Use secure cookies in production (HTTPS)
     expires: expiresAt,
     path: "/",
   });

@@ -16,6 +16,10 @@ RUN npm ci
 # Copy rest of source code
 COPY . .
 
+# Set build-time environment variables for Vite
+ARG VITE_API_BASE_URL=/minihackathon
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
 # Build the application
 RUN npm run build
 
