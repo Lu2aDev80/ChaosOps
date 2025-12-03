@@ -1,4 +1,4 @@
-import { Router } from 'express'
+import { Router, Request } from 'express'
 import crypto from 'crypto'
 import prisma from '../../src/services/db'
 import { requireAuth } from '../middleware/session'
@@ -6,18 +6,29 @@ import { sendMailSafe } from '../mailer'
 import { userInvitationEmail } from '../templates/userInvitationEmail'
 import { invitationEmail } from '../templates/invitationEmail'
 
+// Extend Request type to include user from session
+interface AuthRequest extends Request {
+  user?: {
+    id: string
+    username: string
+    email: string | null
+    role: 'admin' | 'member'
+    organisationId: string
+  }
+}
+
 const router = Router()
 
 router.get('/', async (_req, res) => {
   const orgs = await prisma.organisation.findMany({
-    select: { id: true, name: true, description: true },
+    select: { id: true, name: true, description: true, logoUrl: true },
     orderBy: { name: 'asc' },
   })
   res.json(orgs)
 })
 
 // Get single organisation details
-router.get('/:id', requireAuth, async (req, res) => {
+router.get('/:id', requireAuth, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params
     const org = await prisma.organisation.findUnique({
@@ -49,7 +60,7 @@ router.get('/:id', requireAuth, async (req, res) => {
 })
 
 // Update organisation
-router.patch('/:id', requireAuth, async (req, res) => {
+router.patch('/:id', requireAuth, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params
     const { name, description, logoUrl } = req.body
@@ -87,7 +98,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
 })
 
 // Get organisation users
-router.get('/:id/users', requireAuth, async (req, res) => {
+router.get('/:id/users', requireAuth, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params
 
@@ -117,7 +128,7 @@ router.get('/:id/users', requireAuth, async (req, res) => {
 })
 
 // List pending invitations
-router.get('/:id/invitations', requireAuth, async (req, res) => {
+router.get('/:id/invitations', requireAuth, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params
 
@@ -143,7 +154,7 @@ router.get('/:id/invitations', requireAuth, async (req, res) => {
 })
 
 // Revoke invitation
-router.delete('/:id/invitations/:invitationId', requireAuth, async (req, res) => {
+router.delete('/:id/invitations/:invitationId', requireAuth, async (req: AuthRequest, res) => {
   try {
     const { id, invitationId } = req.params
 
@@ -170,7 +181,7 @@ router.delete('/:id/invitations/:invitationId', requireAuth, async (req, res) =>
 })
 
 // Invite user (create invitation with token)
-router.post('/:id/users', requireAuth, async (req, res) => {
+router.post('/:id/users', requireAuth, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params
     const { email, role } = req.body
@@ -284,7 +295,7 @@ router.post('/:id/users', requireAuth, async (req, res) => {
 })
 
 // Remove user
-router.delete('/:id/users/:userId', requireAuth, async (req, res) => {
+router.delete('/:id/users/:userId', requireAuth, async (req: AuthRequest, res) => {
   try {
     const { id, userId } = req.params
 

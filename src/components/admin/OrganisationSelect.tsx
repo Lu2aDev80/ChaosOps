@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { organisations } from '../../data/organisations';
 import OrganisationCard from '../ui/OrganisationCard';
 import styles from './OrganisationSelect.module.css';
-import { api } from '../../lib/api';
+import { api, type Organisation } from '../../lib/api';
 
 interface OrganisationSelectProps {
   isLogin?: boolean;
@@ -11,6 +10,8 @@ interface OrganisationSelectProps {
 
 const OrganisationSelect: React.FC<OrganisationSelectProps> = ({ isLogin = false }) => {
   const navigate = useNavigate();
+  const [organisations, setOrganisations] = useState<Organisation[]>([]);
+  const [loading, setLoading] = useState(true);
   const [dbStatus, setDbStatus] = useState<{
     api: boolean;
     db: boolean;
@@ -18,16 +19,18 @@ const OrganisationSelect: React.FC<OrganisationSelectProps> = ({ isLogin = false
     lastCheck: string | null;
   }>({ api: false, db: false, loading: true, lastCheck: null });
 
-  // Check database connection status
+  // Load organisations and check database connection status
   useEffect(() => {
     const checkStatus = async () => {
       setDbStatus(prev => ({ ...prev, loading: true }));
+      setLoading(true);
       try {
         // Check API health
         await api.health();
         
-        // Check if we can load organisations (tests DB connection)
-        await api.organisations();
+        // Load organisations (tests DB connection and gets logo data)
+        const orgs = await api.organisations();
+        setOrganisations(orgs);
         
         setDbStatus({
           api: true,
@@ -43,6 +46,8 @@ const OrganisationSelect: React.FC<OrganisationSelectProps> = ({ isLogin = false
           loading: false,
           lastCheck: new Date().toLocaleTimeString('de-DE')
         });
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -139,15 +144,26 @@ const OrganisationSelect: React.FC<OrganisationSelectProps> = ({ isLogin = false
       </div>
 
       <div className={styles.organisationGrid}>
-        {organisations.map((org) => (
-          <OrganisationCard
-            key={org.id}
-            name={org.name}
-            description={org.description}
-            selected={false}
-            onClick={() => handleOrganisationSelect(org.id)}
-          />
-        ))}
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b', gridColumn: '1 / -1' }}>
+            Lade Organisationen...
+          </div>
+        ) : organisations.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b', gridColumn: '1 / -1' }}>
+            Keine Organisationen gefunden
+          </div>
+        ) : (
+          organisations.map((org) => (
+            <OrganisationCard
+              key={org.id}
+              name={org.name}
+              description={org.description}
+              logoUrl={org.logoUrl}
+              selected={false}
+              onClick={() => handleOrganisationSelect(org.id)}
+            />
+          ))
+        )}
       </div>
     </div>
   );

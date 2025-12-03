@@ -50,6 +50,7 @@ const Dashboard: React.FC = () => {
 
   // Get organization info
   const [organisationName, setOrganisationName] = useState<string | null>(null);
+  const [organisationLogo, setOrganisationLogo] = useState<string | null>(null);
   useEffect(() => {
     const load = async () => {
       if (!orgId) return;
@@ -57,6 +58,7 @@ const Dashboard: React.FC = () => {
         const all = await api.organisations();
         const org = all.find((o: any) => o.id === orgId);
         setOrganisationName(org?.name ?? null);
+        setOrganisationLogo(org?.logoUrl ?? null);
       } catch {}
     };
     load();
@@ -311,10 +313,10 @@ const Dashboard: React.FC = () => {
   };
 
   const buttonStyle = {
-    padding: "0.75rem 1.5rem",
+    padding: "clamp(0.625rem, 2vw, 0.75rem) clamp(1.25rem, 3vw, 1.5rem)",
     border: "2px solid #181818",
     borderRadius: "8px",
-    fontSize: "0.95rem",
+    fontSize: "clamp(0.875rem, 2vw, 0.95rem)",
     fontWeight: "700",
     fontFamily: '"Inter", "Roboto", Arial, sans-serif',
     cursor: "pointer",
@@ -354,12 +356,18 @@ const Dashboard: React.FC = () => {
 
           <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
             <img
-              src={chaosOpsLogo}
-              alt="Chaos Ops Logo"
+              src={organisationLogo ? (organisationLogo.startsWith('http') ? organisationLogo : `/minihackathon${organisationLogo}`) : chaosOpsLogo}
+              alt={organisationLogo ? `${organisationName} Logo` : "Chaos Ops Logo"}
               style={{
                 maxWidth: "150px",
                 height: "auto",
+                maxHeight: "80px",
+                objectFit: "contain",
                 filter: "drop-shadow(2px 4px 8px rgba(0,0,0,0.1))",
+              }}
+              onError={(e) => {
+                // Fallback to Chaos Ops logo if organization logo fails to load
+                e.currentTarget.src = chaosOpsLogo;
               }}
             />
             <div>
@@ -401,6 +409,8 @@ const Dashboard: React.FC = () => {
                 color: "#6366f1",
                 border: "2px solid #6366f1",
                 boxShadow: "2px 4px 0 #6366f1",
+                padding: "clamp(0.5rem, 1.5vw, 0.75rem) clamp(0.75rem, 2vw, 1.5rem)",
+                fontSize: "clamp(0.875rem, 2vw, 0.95rem)",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-2px)";
@@ -415,7 +425,7 @@ const Dashboard: React.FC = () => {
               title="Organisation Settings"
             >
               <Settings size={18} />
-              Einstellungen
+              <span style={{ display: window.innerWidth < 480 ? 'none' : 'inline' }}>Einstellungen</span>
             </button>
             <button
               onClick={handleLogout}
@@ -425,6 +435,8 @@ const Dashboard: React.FC = () => {
                 color: "#dc2626",
                 border: "2px solid #dc2626",
                 boxShadow: "2px 4px 0 #dc2626",
+                padding: "clamp(0.5rem, 1.5vw, 0.75rem) clamp(0.75rem, 2vw, 1.5rem)",
+                fontSize: "clamp(0.875rem, 2vw, 0.95rem)",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-2px)";
@@ -438,7 +450,7 @@ const Dashboard: React.FC = () => {
               }}
             >
               <LogOut size={18} />
-              Abmelden
+              <span style={{ display: window.innerWidth < 480 ? 'none' : 'inline' }}>Abmelden</span>
             </button>
           </div>
         </div>
@@ -448,9 +460,9 @@ const Dashboard: React.FC = () => {
           style={{
             display: "grid",
             gridTemplateColumns: selectedEvent
-              ? "repeat(auto-fit, minmax(min(100%, 450px), 1fr))"
+              ? "repeat(auto-fit, minmax(min(100%, 380px), 1fr))"
               : "1fr",
-            gap: "2rem",
+            gap: "clamp(1.25rem, 3vw, 2rem)",
             alignItems: "start",
           }}
         >
@@ -631,6 +643,7 @@ const Dashboard: React.FC = () => {
                         style={{
                           display: "flex",
                           gap: "0.5rem",
+                          flexWrap: "wrap",
                           flexShrink: 0,
                         }}
                       >

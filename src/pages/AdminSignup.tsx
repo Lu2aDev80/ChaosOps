@@ -581,17 +581,32 @@ const AdminSignup: React.FC = () => {
                 type="button"
                 onClick={() => navigate("/login")}
                 style={{
-                  background: "none",
-                  border: "none",
-                  color: "#3b82f6",
-                  textDecoration: "underline",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                  padding: "0.75rem 1.5rem",
+                  border: "2px solid #3b82f6",
+                  borderRadius: "8px",
                   fontSize: "0.9rem",
+                  fontWeight: "600",
+                  fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                  backgroundColor: "transparent",
+                  color: "#3b82f6",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  boxShadow: "2px 4px 0 #3b82f6",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = "3px 6px 0 #3b82f6";
+                  e.currentTarget.style.backgroundColor = "#3b82f6";
+                  e.currentTarget.style.color = "white";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "2px 4px 0 #3b82f6";
+                  e.currentTarget.style.backgroundColor = "transparent";
+                  e.currentTarget.style.color = "#3b82f6";
                 }}
               >
-                Hier anmelden
+                Zur Anmeldung
               </button>
             </div>
           </form>

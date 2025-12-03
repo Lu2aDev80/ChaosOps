@@ -18,7 +18,7 @@ const AdminLogin: React.FC = () => {
     password: "",
   });
   const [orgs, setOrgs] = useState<
-    Array<{ id: string; name: string; description?: string }>
+    Array<{ id: string; name: string; description?: string; logoUrl?: string }>
   >([]);
   const [loadingOrgs, setLoadingOrgs] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -196,10 +196,10 @@ const AdminLogin: React.FC = () => {
   };
 
   const buttonStyle = {
-    padding: "1rem 2rem",
+    padding: "clamp(0.875rem, 2.5vw, 1rem) clamp(1.5rem, 4vw, 2rem)",
     border: "2px solid #181818",
     borderRadius: "8px",
-    fontSize: "1.1rem",
+    fontSize: "clamp(1rem, 2.5vw, 1.1rem)",
     fontWeight: "700",
     fontFamily: '"Inter", "Roboto", Arial, sans-serif',
     cursor: "pointer",
@@ -218,8 +218,8 @@ const AdminLogin: React.FC = () => {
     backgroundColor: "#f8fafc",
     color: "#1f2937",
     border: "2px solid #374151",
-    padding: "1.25rem",
-    fontSize: "1rem",
+    padding: "clamp(1rem, 3vw, 1.25rem)",
+    fontSize: "clamp(0.9rem, 2.25vw, 1rem)",
     fontWeight: "600",
     justifyContent: "flex-start",
     textAlign: "left" as const,
@@ -423,19 +423,45 @@ const AdminLogin: React.FC = () => {
                     }
                   }}
                 >
-                  <Users size={20} strokeWidth={2} />
-                  <div style={{ textAlign: "left", flex: 1 }}>
-                    <div style={{ fontWeight: "700", marginBottom: "0.25rem" }}>
-                      {org.name}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "0.9rem",
-                        fontWeight: "500",
-                        color: selectedOrgId === org.id ? "#e5e7eb" : "#64748b",
-                      }}
-                    >
-                      {org.description || ""}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+                    {org.logoUrl ? (
+                      <img
+                        src={org.logoUrl.startsWith('http') ? org.logoUrl : `/minihackathon${org.logoUrl}`}
+                        alt={`${org.name} Logo`}
+                        style={{
+                          width: '24px',
+                          height: '24px',
+                          objectFit: 'contain',
+                          borderRadius: '4px',
+                          flexShrink: 0
+                        }}
+                        onError={(e) => {
+                          // Fallback to Users icon if image fails
+                          e.currentTarget.style.display = 'none';
+                          const userIcon = e.currentTarget.parentElement?.querySelector('.fallback-icon') as HTMLElement;
+                          if (userIcon) userIcon.style.display = 'block';
+                        }}
+                      />
+                    ) : null}
+                    <Users 
+                      size={20} 
+                      strokeWidth={2} 
+                      className="fallback-icon"
+                      style={{ display: org.logoUrl ? 'none' : 'block' }}
+                    />
+                    <div style={{ textAlign: "left", flex: 1 }}>
+                      <div style={{ fontWeight: "700", marginBottom: "0.25rem", fontSize: "clamp(0.9rem, 2.25vw, 1rem)" }}>
+                        {org.name}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "clamp(0.8rem, 2vw, 0.9rem)",
+                          fontWeight: "500",
+                          color: selectedOrgId === org.id ? "#e5e7eb" : "#64748b",
+                        }}
+                      >
+                        {org.description || ""}
+                      </div>
                     </div>
                   </div>
                   {selectedOrgId === org.id && (

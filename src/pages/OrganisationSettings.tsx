@@ -31,10 +31,20 @@ type UserDetails = {
 const OrganisationSettings: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const orgId = searchParams.get('org');
   
-  const isAdmin = user?.role === 'admin';
+  // Check if user is admin - ensure user is loaded and has admin role
+  const isAdmin = !authLoading && user?.role === 'admin' && user?.organisationId === orgId;
+  
+  // Debug logging
+  console.log('OrganisationSettings Debug:', {
+    user,
+    authLoading,
+    isAdmin,
+    userRole: user?.role,
+    orgId
+  });
 
   // State management
   const [users, setUsers] = useState<UserDetails[]>([]);
@@ -84,7 +94,14 @@ const OrganisationSettings: React.FC = () => {
       setOrgName(orgData.name);
       setOrgDescription(orgData.description || '');
       setLogoUrl(orgData.logoUrl || '');
-      setLogoPreview(orgData.logoUrl || '');
+      // Set logo preview with full URL if logoUrl exists
+      if (orgData.logoUrl) {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/minihackathon';
+        const fullLogoUrl = orgData.logoUrl.startsWith('http') ? orgData.logoUrl : `${API_BASE_URL}${orgData.logoUrl}`;
+        setLogoPreview(fullLogoUrl);
+      } else {
+        setLogoPreview('');
+      }
       setUsers(usersData.map(u => ({
         ...u,
         email: u.email || '',
@@ -220,26 +237,26 @@ const OrganisationSettings: React.FC = () => {
   };
 
   const buttonStyle = {
-    padding: '0.75rem 1.5rem',
-    border: '2px solid #181818',
-    borderRadius: '8px',
-    fontSize: '0.95rem',
-    fontWeight: '700',
+    padding: "clamp(0.625rem, 2vw, 0.75rem) clamp(1.25rem, 3vw, 1.5rem)",
+    border: "2px solid #181818",
+    borderRadius: "8px",
+    fontSize: "clamp(0.875rem, 2vw, 0.95rem)",
+    fontWeight: "700",
     fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    transition: 'all 0.2s ease',
-    boxShadow: '2px 4px 0 #181818',
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
+    transition: "all 0.2s ease",
+    boxShadow: "2px 4px 0 #181818",
   };
 
   const inputStyle = {
     width: '100%',
-    padding: '0.75rem 1rem',
+    padding: 'clamp(0.625rem, 2vw, 0.75rem) clamp(0.875rem, 2.5vw, 1rem)',
     border: '2px solid #cbd5e1',
     borderRadius: '8px',
-    fontSize: '1rem',
+    fontSize: 'clamp(0.9rem, 2.25vw, 1rem)',
     fontFamily: '"Inter", "Roboto", Arial, sans-serif',
     transition: 'all 0.2s ease',
   };
@@ -248,12 +265,12 @@ const OrganisationSettings: React.FC = () => {
     display: 'block',
     marginBottom: '0.5rem',
     fontFamily: '"Gloria Hallelujah", "Caveat", cursive',
-    fontSize: '1rem',
+    fontSize: 'clamp(0.9rem, 2.25vw, 1rem)',
     fontWeight: '700',
     color: '#0f172a',
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className={styles.adminWrapper}>
         <FlipchartBackground />
@@ -262,6 +279,12 @@ const OrganisationSettings: React.FC = () => {
         </div>
       </div>
     );
+  }
+
+  // If user is not authenticated, redirect to login
+  if (!user) {
+    navigate('/login');
+    return null;
   }
 
   return (
@@ -795,6 +818,32 @@ const OrganisationSettings: React.FC = () => {
             Bildschirm-Verwaltung kommt bald! Hier kannst du Display-Screens für deine Organisation verwalten.
           </div>
         </div>
+        )}
+        
+        {/* Message for non-admin users */}
+        {!isAdmin && (
+          <div style={{ ...cardStyle, marginBottom: '2rem', textAlign: 'center' }}>
+            <h2
+              style={{
+                fontFamily: '"Gloria Hallelujah", "Caveat", cursive',
+                fontSize: '1.5rem',
+                marginBottom: '1rem',
+                color: '#64748b',
+              }}
+            >
+              Begrenzte Berechtigung
+            </h2>
+            <p style={{ color: '#64748b', fontSize: '1rem', lineHeight: '1.5' }}>
+              Du hast nur Mitglieder-Berechtigung für diese Organisation. 
+              Nur Administratoren können Organisation-Einstellungen bearbeiten, 
+              Benutzer verwalten und neue Mitglieder einladen.
+            </p>
+            {user?.organisationId !== orgId && (
+              <p style={{ color: '#dc2626', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                Du gehörst zu einer anderen Organisation und hast daher keinen Zugriff auf diese Einstellungen.
+              </p>
+            )}
+          </div>
         )}
       </main>
 
