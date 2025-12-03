@@ -31,6 +31,7 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dayjs": "^1.11.13",
+    "dotenv": "^17.2.3",
     "express": "^4.21.1",
     "lucide-react": "^0.555.0",
     "mjml": "^4.17.1",
