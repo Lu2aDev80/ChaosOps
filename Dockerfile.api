@@ -18,6 +18,7 @@ RUN npm ci
 # Copy source code
 COPY server ./server
 COPY src/services ./src/services
+COPY tsconfig.server.json ./tsconfig.server.json
 
 # Create startup script with proper newlines
 RUN printf '#!/bin/sh\n\
