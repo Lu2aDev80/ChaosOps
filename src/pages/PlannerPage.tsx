@@ -10,10 +10,6 @@ interface DayPlan {
   schedule: ScheduleItem[];
 }
 
-interface Event {
-  dayPlans: DayPlan[];
-}
-
 // Sample schedule for demo/development
 // Includes examples of time and position changes for demonstration
 const sampleSchedule: ScheduleItem[] = [
@@ -65,59 +61,73 @@ const sampleSchedule: ScheduleItem[] = [
 
 const PlannerPage: React.FC = () => {
   const [searchParams] = useSearchParams();
-  
-  // In a real app, you would:
-  // 1. Get the dayPlanId from searchParams
-  // 2. Fetch the actual schedule from localStorage or API
-  // 3. Display the appropriate schedule
+  const [scheduleData, setScheduleData] = React.useState({
+    schedule: sampleSchedule,
+    title: 'Heutiger Ablauf',
+    date: new Date().toLocaleDateString('de-DE', { 
+      weekday: 'long', 
+      month: 'long', 
+      day: 'numeric', 
+      year: 'numeric' 
+    })
+  });
   
   const dayPlanId = searchParams.get('dayPlanId');
   const orgId = searchParams.get('org');
-  
-  // For development, we'll use the sample schedule
-  // In production, you would load the actual schedule based on dayPlanId and orgId
-  let schedule = sampleSchedule;
-  let title = 'Heutiger Ablauf';
-  let date = new Date().toLocaleDateString('de-DE', { 
-    weekday: 'long', 
-    month: 'long', 
-    day: 'numeric', 
-    year: 'numeric' 
-  });
 
-  // If there's a dayPlanId, try to load from localStorage (for demo purposes)
-  if (dayPlanId && orgId) {
-    try {
-      const storedEvents = localStorage.getItem(`events_${orgId}`);
-      if (storedEvents) {
-        const events: Event[] = JSON.parse(storedEvents);
-        
-        // Find the day plan
-        for (const event of events) {
-          const dayPlan = event.dayPlans.find((dp: DayPlan) => dp.id === dayPlanId);
-          if (dayPlan) {
-            schedule = dayPlan.schedule;
-            title = dayPlan.name;
-            date = new Date(dayPlan.date).toLocaleDateString('de-DE', {
-              weekday: 'long',
-              month: 'long',
-              day: 'numeric',
-              year: 'numeric'
-            });
-            break;
+  // Load from database via API instead of localStorage
+  React.useEffect(() => {
+    const fetchDayPlan = async () => {
+      if (dayPlanId && orgId) {
+        try {
+          // Import the API from the lib
+          const { api } = await import('../lib/api');
+          
+          // Fetch events for the organization from the database
+          const events = await api.listEvents(orgId);
+          
+          // Find the day plan
+          for (const event of events) {
+            const dayPlan = event.dayPlans?.find((dp: DayPlan) => dp.id === dayPlanId);
+            if (dayPlan) {
+              const newSchedule = dayPlan.schedule || [];
+              const newTitle = dayPlan.name;
+              const newDate = new Date(dayPlan.date).toLocaleDateString('de-DE', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+              });
+              // Force re-render by updating state
+              setScheduleData({ schedule: newSchedule, title: newTitle, date: newDate });
+              break;
+            }
           }
+        } catch (error) {
+          console.error('Error loading schedule from database:', error);
+          // Fallback to sample schedule
+          setScheduleData({ 
+            schedule: sampleSchedule, 
+            title: 'Heutiger Ablauf (Demo)', 
+            date: new Date().toLocaleDateString('de-DE', { 
+              weekday: 'long', 
+              month: 'long', 
+              day: 'numeric', 
+              year: 'numeric' 
+            })
+          });
         }
       }
-    } catch (error) {
-      console.error('Error loading schedule:', error);
-    }
-  }
+    };
+    
+    fetchDayPlan();
+  }, [dayPlanId, orgId]);
 
   return (
     <Planer 
-      schedule={schedule} 
-      title={title}
-      date={date}
+      schedule={scheduleData.schedule} 
+      title={scheduleData.title}
+      date={scheduleData.date}
       showClock={true} 
       autoCenter={true}
       debug={false}

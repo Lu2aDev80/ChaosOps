@@ -3,7 +3,17 @@ import styles from '../../pages/Admin.module.css';
 import { api } from '../../lib/api';
 import type { Event, DayPlan } from '../../types/event';
 import type { ScheduleItem } from '../../types/schedule';
-import { Calendar, ChevronLeft, CheckCircle, ArrowRight, Users, Clock } from 'lucide-react';
+import { 
+  Calendar, 
+  ChevronLeft, 
+  CheckCircle, 
+  Users, 
+  Clock, 
+  X,
+  ArrowRight,
+  Star,
+  Sparkles
+} from 'lucide-react';
 import EventForm from './EventForm';
 import DayPlanForm from './DayPlanForm';
 import ScheduleManager from '../planner/ScheduleManager';
@@ -12,232 +22,296 @@ interface Props {
   organizationId: string;
   onClose: () => void;
   onCreated: (event: Event) => void;
+  editingEvent?: Event | null;
+  editingDayPlan?: DayPlan | null;
 }
 
 const WIZARD_STEPS = [
   { 
     title: 'Veranstaltung', 
     icon: Users,
-    description: 'Grundlegende Informationen zur Veranstaltung definieren'
+    description: 'Grundlegende Informationen zur Veranstaltung',
+    shortDesc: 'Veranstaltungsdetails'
   },
   { 
     title: 'Tagesplan', 
     icon: Calendar,
-    description: 'Datum und Name für den Tagesplan festlegen'
+    description: 'Datum und Name für den Tagesplan festlegen',
+    shortDesc: 'Tagesplan erstellen'
   },
   { 
     title: 'Termine', 
     icon: Clock,
-    description: 'Zeitplan mit Aktivitäten und Terminen erstellen'
+    description: 'Zeitplan mit Aktivitäten und Terminen erstellen',
+    shortDesc: 'Zeitplan organisieren'
   }
 ];
 
-const EventCreationWizard: React.FC<Props> = ({ organizationId, onClose, onCreated }) => {
-  const [step, setStep] = useState(0);
-  const [createdEvent, setCreatedEvent] = useState<Event | null>(null);
-  const [createdDayPlan, setCreatedDayPlan] = useState<DayPlan | null>(null);
+const EventCreationWizard: React.FC<Props> = ({ 
+  organizationId, 
+  onClose, 
+  onCreated, 
+  editingEvent = null, 
+  editingDayPlan = null 
+}) => {
+  // Determine initial step based on editing mode
+  const getInitialStep = () => {
+    if (editingDayPlan) return 2; // Go directly to schedule editing
+    if (editingEvent) return 1; // Go to day plan selection/creation
+    return 0; // Normal creation flow
+  };
+  
+  const [step, setStep] = useState(getInitialStep());
+  const [createdEvent, setCreatedEvent] = useState<Event | null>(editingEvent);
+  const [createdDayPlan, setCreatedDayPlan] = useState<DayPlan | null>(editingDayPlan);
 
   const goBack = () => {
     if (step === 0) { onClose(); return; }
     setStep(step - 1);
   };
 
-  // Progress indicator component
+
+
+  // Enhanced progress indicator component
   const ProgressIndicator = () => (
     <div className={styles.adminCard} style={{ 
       width: '100%', 
-      maxWidth: '900px', 
+      maxWidth: '1000px', 
       margin: '0 auto 2rem',
-      transform: 'rotate(0.2deg)',
-      background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)'
+      transform: 'rotate(0deg)',
+      background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+      border: '3px solid var(--color-ink)',
+      boxShadow: '0 6px 20px rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.05)'
     }}>
       <div className={styles.tape} aria-hidden="true" />
-      <h2 className={styles.cardTitle} style={{ 
+      
+      {/* Header */}
+      <div style={{ 
         display: 'flex', 
         alignItems: 'center', 
+        justifyContent: 'center',
         gap: '0.75rem',
-        marginBottom: '1.5rem',
-        fontSize: '1.4rem'
+        marginBottom: '2rem',
+        padding: '0.5rem'
       }}>
-        <Calendar size={28} />
-        Veranstaltung erstellen
-      </h2>
-      
+        <div style={{
+          background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+          borderRadius: '50%',
+          padding: '0.75rem',
+          border: '3px solid var(--color-ink)',
+          boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+        }}>
+          <Sparkles size={24} color="#fff" />
+        </div>
+        <h2 className={styles.cardTitle} style={{ 
+          fontSize: '1.6rem',
+          margin: 0,
+          color: '#1e40af'
+        }}>
+          {editingEvent || editingDayPlan ? 'Bearbeitung' : 'Neue Veranstaltung'}
+        </h2>
+      </div>
+
+      {/* Step Progress Bar */}
       <div style={{ 
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: '2rem',
         gap: '1rem',
-        marginBottom: '1rem'
+        flexWrap: 'wrap'
       }}>
         {WIZARD_STEPS.map((stepData, index) => {
           const StepIcon = stepData.icon;
           const isActive = index === step;
-          const isCompleted = index < step;
+          const isCompleted = index < step || (index === step && step === 2 && createdDayPlan);
+          const isAccessible = index <= step || (index === 2 && createdDayPlan);
           
           return (
-            <div key={stepData.title} style={{
-              padding: '1.25rem 1rem',
-              border: '3px solid #181818',
-              borderRadius: '1rem 1.3rem 0.9rem 1.2rem',
-              backgroundColor: isActive ? '#3b82f6' : isCompleted ? '#10b981' : '#ffffff',
-              color: isActive || isCompleted ? '#ffffff' : '#1f2937',
-              boxShadow: isActive 
-                ? '4px 8px 0 #181818, inset 0 2px 0 rgba(255,255,255,0.3)' 
-                : isCompleted 
-                ? '3px 6px 0 #181818, inset 0 2px 0 rgba(255,255,255,0.2)' 
-                : '2px 4px 0 #cbd5e1',
-              fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
-              fontWeight: '700',
-              textAlign: 'center',
-              transform: isActive ? 'translateY(-3px) scale(1.02)' : isCompleted ? 'translateY(-1px)' : 'none',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              position: 'relative',
-              cursor: 'default'
-            }}>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
+            <React.Fragment key={stepData.title}>
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
                 gap: '0.5rem',
-                marginBottom: '0.5rem'
+                opacity: isAccessible ? 1 : 0.4,
+                transition: 'all 0.3s ease'
               }}>
-                <StepIcon size={22} />
+                {/* Step Circle */}
                 <div style={{
-                  fontSize: '0.75rem',
-                  backgroundColor: isActive || isCompleted ? 'rgba(255,255,255,0.25)' : '#e2e8f0',
-                  color: isActive || isCompleted ? '#ffffff' : '#64748b',
+                  width: '60px',
+                  height: '60px',
                   borderRadius: '50%',
-                  width: '24px',
-                  height: '24px',
+                  border: '3px solid var(--color-ink)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontWeight: '800'
+                  background: isCompleted 
+                    ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
+                    : isActive 
+                    ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' 
+                    : '#fff',
+                  color: isCompleted || isActive ? '#fff' : '#64748b',
+                  boxShadow: isActive 
+                    ? '0 6px 20px rgba(59, 130, 246, 0.4), 0 0 0 4px rgba(59, 130, 246, 0.1)' 
+                    : isCompleted 
+                    ? '0 4px 12px rgba(16, 185, 129, 0.3)' 
+                    : '0 2px 8px rgba(0,0,0,0.1)',
+                  transform: isActive ? 'scale(1.1)' : 'scale(1)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                 }}>
-                  {index + 1}
+                  {isCompleted ? <CheckCircle size={24} /> : <StepIcon size={24} />}
+                </div>
+                
+                {/* Step Label */}
+                <div style={{
+                  textAlign: 'center',
+                  maxWidth: '120px'
+                }}>
+                  <div style={{
+                    fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
+                    fontSize: '0.9rem',
+                    fontWeight: '700',
+                    color: isActive ? '#1e40af' : '#374151',
+                    marginBottom: '0.25rem'
+                  }}>
+                    {stepData.title}
+                  </div>
+                  <div style={{
+                    fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                    fontSize: '0.75rem',
+                    color: '#64748b',
+                    lineHeight: '1.2'
+                  }}>
+                    {window.innerWidth < 768 ? stepData.shortDesc : stepData.description}
+                  </div>
                 </div>
               </div>
-              <div style={{ fontSize: '1rem', marginBottom: '0.25rem' }}>{stepData.title}</div>
-              <div style={{ 
-                fontSize: '0.75rem', 
-                opacity: 0.8,
-                lineHeight: '1.2',
-                fontWeight: '400',
-                fontFamily: '"Inter", "Roboto", Arial, sans-serif'
-              }}>
-                {stepData.description}
-              </div>
               
+              {/* Arrow between steps */}
               {index < WIZARD_STEPS.length - 1 && (
-                <ArrowRight 
-                  size={16} 
-                  style={{ 
-                    position: 'absolute', 
-                    right: '-12px', 
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: '#64748b',
-                    opacity: 0.7,
-                    backgroundColor: '#ffffff',
-                    borderRadius: '50%',
-                    padding: '2px'
-                  }} 
-                />
+                <div style={{
+                  display: window.innerWidth < 640 ? 'none' : 'flex',
+                  alignItems: 'center',
+                  color: index < step ? '#10b981' : '#d1d5db',
+                  margin: '0 0.5rem'
+                }}>
+                  <ArrowRight size={20} />
+                </div>
               )}
-            </div>
+            </React.Fragment>
           );
         })}
       </div>
-      
+
+      {/* Current Step Info */}
       <div style={{
-        padding: '0.75rem 1rem',
-        backgroundColor: '#f1f5f9',
-        borderRadius: '0.75rem',
-        border: '1px solid #e2e8f0',
-        fontSize: '0.9rem',
-        color: '#475569',
-        fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+        background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+        border: '2px solid #3b82f6',
+        borderRadius: '12px',
+        padding: '1rem',
         textAlign: 'center'
       }}>
-        Schritt {step + 1} von {WIZARD_STEPS.length}: {WIZARD_STEPS[step]?.description}
+        <div style={{
+          fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
+          fontSize: '1rem',
+          fontWeight: '700',
+          color: '#1e40af',
+          marginBottom: '0.25rem'
+        }}>
+          Schritt {step + 1} von {WIZARD_STEPS.length}
+        </div>
+        <div style={{
+          fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+          fontSize: '0.9rem',
+          color: '#475569'
+        }}>
+          {WIZARD_STEPS[step]?.description}
+        </div>
       </div>
     </div>
   );
 
-  // Navigation component
+  // Enhanced navigation component
   const Navigation = () => (
     <div style={{ 
       display: 'flex', 
       justifyContent: 'space-between', 
       alignItems: 'center',
       marginBottom: '2rem',
-      maxWidth: '900px',
-      margin: '0 auto 2rem'
+      maxWidth: '1000px',
+      margin: '0 auto 2rem',
+      gap: '1rem',
+      flexWrap: 'wrap'
     }}>
+      {/* Back Button */}
       <button 
         onClick={goBack}
         style={{
-          padding: '1rem 1.5rem',
-          border: '3px solid #64748b',
-          borderRadius: '1rem 1.2rem 0.9rem 1.1rem',
-          backgroundColor: '#ffffff',
+          padding: '0.875rem 1.5rem',
+          border: '3px solid var(--color-ink)',
+          borderRadius: '12px',
+          backgroundColor: '#fff',
           color: '#64748b',
           fontWeight: '700',
           fontFamily: '"Inter", "Roboto", Arial, sans-serif',
           fontSize: '1rem',
           display: 'flex',
           alignItems: 'center',
-          gap: '0.75rem',
+          gap: '0.5rem',
           cursor: 'pointer',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          boxShadow: '3px 6px 0 #64748b',
-          transform: 'rotate(-0.8deg)',
-          minWidth: '120px'
+          boxShadow: '0 4px 0 var(--color-ink), 0 2px 8px rgba(0,0,0,0.1)',
+          minWidth: '140px',
+          justifyContent: 'center'
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'rotate(-0.8deg) translateY(-3px) scale(1.02)';
-          e.currentTarget.style.boxShadow = '4px 8px 0 #64748b';
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          e.currentTarget.style.boxShadow = '0 6px 0 var(--color-ink), 0 4px 12px rgba(0,0,0,0.15)';
           e.currentTarget.style.backgroundColor = '#f8fafc';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'rotate(-0.8deg) translateY(0) scale(1)';
-          e.currentTarget.style.boxShadow = '3px 6px 0 #64748b';
-          e.currentTarget.style.backgroundColor = '#ffffff';
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 4px 0 var(--color-ink), 0 2px 8px rgba(0,0,0,0.1)';
+          e.currentTarget.style.backgroundColor = '#fff';
         }}
       >
         <ChevronLeft size={20} /> 
         {step === 0 ? 'Schließen' : 'Zurück'}
       </button>
       
-      {/* Step counter in middle */}
+      {/* Progress Dots (Mobile Alternative) */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
         gap: '0.5rem',
-        padding: '0.75rem 1.25rem',
-        backgroundColor: '#f1f5f9',
-        border: '2px solid #e2e8f0',
-        borderRadius: '2rem',
-        fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-        fontWeight: '600',
-        color: '#475569',
-        fontSize: '0.9rem'
+        order: window.innerWidth < 640 ? 3 : 2,
+        width: window.innerWidth < 640 ? '100%' : 'auto',
+        justifyContent: window.innerWidth < 640 ? 'center' : 'flex-start'
       }}>
-        <div style={{
-          width: '8px',
-          height: '8px',
-          borderRadius: '50%',
-          backgroundColor: '#3b82f6'
-        }} />
-        Schritt {step + 1} von {WIZARD_STEPS.length}
+        {WIZARD_STEPS.map((_, index) => (
+          <div
+            key={index}
+            style={{
+              width: '12px',
+              height: '12px',
+              borderRadius: '50%',
+              backgroundColor: index <= step ? '#3b82f6' : '#d1d5db',
+              transition: 'all 0.3s ease',
+              border: index === step ? '2px solid #1e40af' : 'none',
+              transform: index === step ? 'scale(1.2)' : 'scale(1)'
+            }}
+          />
+        ))}
       </div>
       
+      {/* Close Button */}
       <button 
         onClick={onClose}
         style={{
-          padding: '1rem 1.5rem',
+          padding: '0.875rem 1.25rem',
           border: '3px solid #ef4444',
-          borderRadius: '1.1rem 0.9rem 1.2rem 0.85rem',
+          borderRadius: '12px',
           backgroundColor: '#fef2f2',
           color: '#dc2626',
           fontWeight: '700',
@@ -245,22 +319,27 @@ const EventCreationWizard: React.FC<Props> = ({ organizationId, onClose, onCreat
           fontSize: '1rem',
           cursor: 'pointer',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          boxShadow: '3px 6px 0 #ef4444',
-          transform: 'rotate(0.5deg)',
-          minWidth: '120px'
+          boxShadow: '0 4px 0 #ef4444, 0 2px 8px rgba(239, 68, 68, 0.2)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          order: window.innerWidth < 640 ? 1 : 3,
+          minWidth: '120px',
+          justifyContent: 'center'
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'rotate(0.5deg) translateY(-3px) scale(1.02)';
-          e.currentTarget.style.boxShadow = '4px 8px 0 #ef4444';
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          e.currentTarget.style.boxShadow = '0 6px 0 #ef4444, 0 4px 12px rgba(239, 68, 68, 0.3)';
           e.currentTarget.style.backgroundColor = '#fee2e2';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'rotate(0.5deg) translateY(0) scale(1)';
-          e.currentTarget.style.boxShadow = '3px 6px 0 #ef4444';
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 4px 0 #ef4444, 0 2px 8px rgba(239, 68, 68, 0.2)';
           e.currentTarget.style.backgroundColor = '#fef2f2';
         }}
       >
-        Abbrechen
+        <X size={18} />
+        {window.innerWidth < 480 ? 'Abbrechen' : 'Abbrechen'}
       </button>
     </div>
   );
@@ -268,6 +347,24 @@ const EventCreationWizard: React.FC<Props> = ({ organizationId, onClose, onCreat
     eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'dayPlans'>
   ) => {
     try {
+      if (editingEvent) {
+        // Update existing event
+        console.log('Updating event:', editingEvent.id, eventData);
+        const updated = await api.updateEvent(editingEvent.id, { 
+          name: eventData.name, 
+          description: eventData.description 
+        });
+        const updatedEvent: Event = {
+          ...editingEvent,
+          name: updated.name,
+          description: updated.description,
+          updatedAt: new Date(updated.updatedAt)
+        };
+        setCreatedEvent(updatedEvent);
+        onCreated(updatedEvent);
+        return;
+      }
+      
       const created = await api.createEvent(organizationId, { name: eventData.name, description: eventData.description });
       const newEvent: Event = {
         id: created.id,
@@ -281,7 +378,7 @@ const EventCreationWizard: React.FC<Props> = ({ organizationId, onClose, onCreat
       setCreatedEvent(newEvent);
       setStep(1);
     } catch (err) {
-      console.error('Create event failed', err);
+      console.error('Create/Update event failed', err);
     }
   };
 
@@ -290,31 +387,107 @@ const EventCreationWizard: React.FC<Props> = ({ organizationId, onClose, onCreat
   ) => {
     if (!createdEvent) return;
     try {
-      const created = await api.createDayPlan(createdEvent.id, { name: dayPlanData.name, date: dayPlanData.date, schedule: dayPlanData.schedule });
+      if (editingDayPlan) {
+        // Update existing day plan
+        console.log('Updating day plan:', editingDayPlan.id, dayPlanData);
+        const updated = await api.updateDayPlan(editingDayPlan.id, {
+          name: dayPlanData.name,
+          date: dayPlanData.date,
+          schedule: dayPlanData.schedule
+        });
+        
+        const updatedDayPlan: DayPlan = {
+          id: updated.id,
+          eventId: updated.eventId,
+          name: updated.name,
+          date: updated.date,
+          schedule: (updated.scheduleItems || []).map((si: any) => ({
+            id: si.id,
+            time: si.time,
+            type: si.type,
+            title: si.title,
+            speaker: si.speaker,
+            location: si.location,
+            details: si.details,
+            materials: si.materials,
+            duration: si.duration,
+            snacks: si.snacks,
+            facilitator: si.facilitator
+          })),
+          createdAt: new Date(updated.createdAt),
+          updatedAt: new Date(updated.updatedAt),
+        };
+        setCreatedDayPlan(updatedDayPlan);
+        setCreatedEvent({ ...createdEvent, dayPlans: [updatedDayPlan] });
+        setStep(2);
+        return;
+      }
+      
+      const created = await api.createDayPlan(createdEvent.id, { 
+        name: dayPlanData.name, 
+        date: dayPlanData.date, 
+        schedule: dayPlanData.schedule 
+      });
+      
       const newDayPlan: DayPlan = {
         id: created.id,
         eventId: createdEvent.id,
         name: created.name,
         date: created.date,
-        schedule: (created.scheduleItems || []).map((si: any) => ({ id: si.id, time: si.time, type: si.type, title: si.title })),
+        schedule: (created.scheduleItems || []).map((si: any) => ({
+          id: si.id,
+          time: si.time,
+          type: si.type,
+          title: si.title,
+          speaker: si.speaker,
+          location: si.location,
+          details: si.details,
+          materials: si.materials,
+          duration: si.duration,
+          snacks: si.snacks,
+          facilitator: si.facilitator
+        })),
         createdAt: new Date(created.createdAt),
         updatedAt: new Date(created.updatedAt),
       };
       setCreatedDayPlan(newDayPlan);
-      // also attach to event state so final callback includes it
       setCreatedEvent({ ...createdEvent, dayPlans: [newDayPlan] });
       setStep(2);
     } catch (err) {
-      console.error('Create day plan failed', err);
+      console.error('Create/Update day plan failed', err);
     }
   };
 
   const handleSaveSchedule = async (schedule: ScheduleItem[]) => {
     if (!createdEvent || !createdDayPlan) return;
     try {
-      // Persist schedule update if API has such endpoint, otherwise keep local
-      // For now, just update local state
-      const updatedDayPlan = { ...createdDayPlan, schedule };
+      // Update the day plan with the new schedule
+      const updated = await api.updateDayPlan(createdDayPlan.id, {
+        schedule: schedule
+      });
+      
+      const updatedDayPlan: DayPlan = {
+        id: updated.id,
+        eventId: updated.eventId,
+        name: updated.name,
+        date: updated.date,
+        schedule: (updated.scheduleItems || []).map((si: any) => ({
+          id: si.id,
+          time: si.time,
+          type: si.type,
+          title: si.title,
+          speaker: si.speaker,
+          location: si.location,
+          details: si.details,
+          materials: si.materials,
+          duration: si.duration,
+          snacks: si.snacks,
+          facilitator: si.facilitator
+        })),
+        createdAt: new Date(updated.createdAt),
+        updatedAt: new Date(updated.updatedAt),
+      };
+      
       setCreatedDayPlan(updatedDayPlan);
       const finalEvent: Event = {
         ...createdEvent,
@@ -330,73 +503,104 @@ const EventCreationWizard: React.FC<Props> = ({ organizationId, onClose, onCreat
     <div style={{ 
       minHeight: '100vh',
       background: 'repeating-linear-gradient(0deg, var(--color-paper) 0px, var(--color-paper) 39px, #e5e7eb 40px, var(--color-paper) 41px)',
-      padding: '2rem 1rem 4rem',
+      padding: '1.5rem 1rem 3rem',
       position: 'relative'
     }}>
       {/* Enhanced background decorations */}
       <div style={{
         position: 'absolute',
-        top: '80px',
-        left: '8%',
-        width: '50px',
-        height: '50px',
-        background: 'url(\'data:image/svg+xml;utf8,<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg"><polygon points="25,5 30,18 45,18 33,28 37,42 25,34 13,42 17,28 5,18 20,18" fill="%23fbbf24" stroke="%23f59e0b" stroke-width="2.5"/></svg>\') no-repeat center/contain',
-        opacity: 0.4,
-        zIndex: 0,
-        animation: 'float 8s ease-in-out infinite'
-      }} />
-      
-      <div style={{
-        position: 'absolute',
-        top: '150px',
-        right: '12%',
-        width: '35px',
-        height: '35px',
-        background: 'url(\'data:image/svg+xml;utf8,<svg width="35" height="35" viewBox="0 0 35 35" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="17.5" cy="17.5" r="15" fill="%2306b6d4" stroke="%230891b2" stroke-width="2"/><circle cx="17.5" cy="17.5" r="8" fill="%23ffffff" opacity="0.8"/></svg>\') no-repeat center/contain',
-        opacity: 0.35,
-        zIndex: 0,
-        animation: 'float 6s ease-in-out infinite 2s'
-      }} />
-      
-      <div style={{
-        position: 'absolute',
-        bottom: '120px',
-        left: '15%',
+        top: '10vh',
+        left: '5%',
         width: '40px',
         height: '40px',
-        background: 'url(\'data:image/svg+xml;utf8,<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="30" height="30" rx="8" fill="%2310b981" stroke="%23047857" stroke-width="2"/><path d="M12 20l6 6 10-10" stroke="%23ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>\') no-repeat center/contain',
+        background: 'url(\'data:image/svg+xml;utf8,<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><polygon points="20,3 24,15 37,15 26,23 30,34 20,27 10,34 14,23 3,15 16,15" fill="%23fbbf24" stroke="%23f59e0b" stroke-width="2.5"/></svg>\') no-repeat center/contain',
         opacity: 0.3,
         zIndex: 0,
-        animation: 'float 7s ease-in-out infinite 1s'
+        animation: 'float 6s ease-in-out infinite'
       }} />
       
+      <div style={{
+        position: 'absolute',
+        bottom: '15vh',
+        right: '8%',
+        width: '35px',
+        height: '35px',
+        borderRadius: '50%',
+        background: 'linear-gradient(135deg, #a5f3fc 0%, #38bdf8 100%)',
+        opacity: 0.4,
+        zIndex: 0,
+        animation: 'float 4s ease-in-out infinite reverse'
+      }} />
+
+      <div style={{
+        position: 'absolute',
+        top: '60%',
+        left: '10%',
+        width: '50px',
+        height: '20px',
+        background: 'url(\'data:image/svg+xml;utf8,<svg width="50" height="20" viewBox="0 0 50 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 13 Q 15 3, 30 13 T 47 13" stroke="%23f472b6" stroke-width="2.5" fill="none"/></svg>\') no-repeat center/contain',
+        opacity: 0.3,
+        zIndex: 0,
+        animation: 'bounce 3s ease-in-out infinite'
+      }} />
+
+      {/* Floating animation styles */}
       <style>
         {`
           @keyframes float {
-            0%, 100% { 
-              transform: translateY(0px) rotate(0deg) scale(1); 
-              opacity: 0.3;
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-10px) rotate(2deg); }
+            66% { transform: translateY(-5px) rotate(-1deg); }
+          }
+          
+          @keyframes bounce {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-8px) scale(1.05); }
+          }
+          
+          @keyframes slideInFromLeft {
+            from {
+              opacity: 0;
+              transform: translateX(-50px);
             }
-            33% { 
-              transform: translateY(-12px) rotate(5deg) scale(1.05); 
-              opacity: 0.4;
-            }
-            66% { 
-              transform: translateY(-8px) rotate(-3deg) scale(0.98); 
-              opacity: 0.35;
+            to {
+              opacity: 1;
+              transform: translateX(0);
             }
           }
           
-          .wizard-content {
-            position: relative;
-            z-index: 10;
+          @keyframes slideInFromRight {
+            from {
+              opacity: 0;
+              transform: translateX(50px);
+            }
+            to {
+              opacity: 1;
+              transform: translateX(0);
+            }
+          }
+          
+          @keyframes slideInFromBottom {
+            from {
+              opacity: 0;
+              transform: translateY(30px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
           }
         `}
       </style>
 
-      <div className="wizard-content" style={{ 
+      <div style={{ 
         width: '100%', 
-        maxWidth: '1000px',
+        maxWidth: '1200px',
         margin: '0 auto',
         position: 'relative',
         zIndex: 1
@@ -404,7 +608,7 @@ const EventCreationWizard: React.FC<Props> = ({ organizationId, onClose, onCreat
         <ProgressIndicator />
         <Navigation />
 
-        {/* Step content with improved transitions */}
+        {/* Enhanced step content with better transitions */}
         <div style={{ 
           display: 'flex', 
           justifyContent: 'center',
@@ -413,181 +617,195 @@ const EventCreationWizard: React.FC<Props> = ({ organizationId, onClose, onCreat
         }}>
           <div style={{
             width: '100%',
+            maxWidth: '1000px',
             opacity: 1,
             transform: 'translateX(0)',
-            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+            transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
           }}>
+            {/* Step 1: Event Form */}
             {step === 0 && (
               <div style={{
-                animation: 'slideInFromLeft 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+                animation: 'slideInFromLeft 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                display: 'flex',
+                justifyContent: 'center'
               }}>
-                <EventForm
-                  organizationId={organizationId}
-                  onSave={handleCreateEvent}
-                  onCancel={onClose}
-                />
+                <div style={{ width: '100%', maxWidth: '600px' }}>
+                  <EventForm
+                    event={editingEvent}
+                    organizationId={organizationId}
+                    onSave={handleCreateEvent}
+                    onCancel={onClose}
+                  />
+                </div>
               </div>
             )}
 
+            {/* Step 2: Day Plan Form */}
             {step === 1 && createdEvent && (
               <div style={{
-                animation: 'slideInFromRight 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+                animation: 'slideInFromRight 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                display: 'flex',
+                justifyContent: 'center'
               }}>
-                <DayPlanForm
-                  event={createdEvent}
-                  onSave={handleCreateDayPlan}
-                  onCancel={() => setStep(0)}
-                />
+                <div style={{ width: '100%', maxWidth: '600px' }}>
+                  <DayPlanForm
+                    dayPlan={editingDayPlan}
+                    event={createdEvent}
+                    onSave={handleCreateDayPlan}
+                    onCancel={() => setStep(0)}
+                  />
+                </div>
               </div>
             )}
 
-            {step === 2 && createdDayPlan && (
+            {/* Step 3: Schedule Manager */}
+            {step === 2 && (createdDayPlan || editingDayPlan) && (
               <div style={{
-                animation: 'slideInFromRight 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                animation: 'slideInFromBottom 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
                 width: '100%'
               }}>
-                <div style={{ width: '100%', maxWidth: '900px' }}>
+                {/* Schedule Header */}
+                <div className={styles.adminCard} style={{
+                  marginBottom: '2rem',
+                  transform: 'rotate(0deg)',
+                  background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
+                  border: '3px solid #10b981',
+                  maxWidth: '800px',
+                  margin: '0 auto 2rem'
+                }}>
+                  <div className={styles.tape} aria-hidden="true" />
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    marginBottom: '1rem'
+                  }}>
+                    <div style={{
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      borderRadius: '50%',
+                      padding: '0.75rem',
+                      border: '2px solid var(--color-ink)'
+                    }}>
+                      <Clock size={24} color="#fff" />
+                    </div>
+                    <h3 className={styles.cardTitle} style={{
+                      fontSize: '1.4rem',
+                      margin: 0,
+                      color: '#047857'
+                    }}>
+                      Zeitplan für "{(createdDayPlan || editingDayPlan)?.name}"
+                    </h3>
+                  </div>
+                  <p style={{
+                    color: '#065f46',
+                    fontSize: '1rem',
+                    fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                    margin: 0,
+                    lineHeight: '1.5'
+                  }}>
+                    Erstelle und organisiere die Termine für deinen Tagesplan. 
+                    Du kannst Zeiten hinzufügen, bearbeiten und die Reihenfolge anpassen.
+                  </p>
+                </div>
+                
+                {/* Schedule Manager */}
+                <ScheduleManager
+                  schedule={(createdDayPlan || editingDayPlan)?.schedule || []}
+                  onSave={handleSaveSchedule}
+                  onCancel={() => setStep(1)}
+                />
+                
+                {/* Completion Card */}
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  marginTop: '3rem' 
+                }}>
                   <div className={styles.adminCard} style={{
-                    marginBottom: '2rem',
-                    transform: 'rotate(-0.3deg)',
-                    background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)'
+                    padding: '2.5rem',
+                    maxWidth: '500px',
+                    textAlign: 'center',
+                    transform: 'rotate(0deg)',
+                    background: 'linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%)',
+                    border: '3px solid #f59e0b'
                   }}>
                     <div className={styles.tape} aria-hidden="true" />
-                    <h3 style={{
-                      fontSize: '1.2rem',
-                      fontWeight: '700',
-                      color: '#1e40af',
-                      marginBottom: '0.5rem',
-                      fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif'
+                    
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '1rem',
+                      marginBottom: '1.5rem'
                     }}>
-                      Zeitplan für "{createdDayPlan.name}"
-                    </h3>
-                    <p style={{
-                      color: '#64748b',
-                      fontSize: '0.95rem',
-                      fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                      margin: 0
-                    }}>
-                      Erstelle und organisiere die Termine für deinen Tagesplan. Du kannst Zeiten hinzufügen, bearbeiten und die Reihenfolge anpassen.
-                    </p>
-                  </div>
-                  
-                  <ScheduleManager
-                    schedule={createdDayPlan.schedule}
-                    onSave={handleSaveSchedule}
-                    onCancel={() => setStep(1)}
-                  />
-                  
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'center', 
-                    marginTop: '3rem' 
-                  }}>
-                    <div className={styles.adminCard} style={{
-                      padding: '2rem',
-                      maxWidth: '400px',
-                      textAlign: 'center',
-                      transform: 'rotate(-0.8deg)',
-                      background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
-                      border: '3px solid #10b981'
-                    }}>
-                      <div className={styles.tape} aria-hidden="true" />
                       <div style={{
+                        background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                        borderRadius: '50%',
+                        padding: '1rem',
+                        border: '3px solid var(--color-ink)',
+                        animation: 'bounce 2s ease-in-out infinite'
+                      }}>
+                        <Star size={32} color="#fff" />
+                      </div>
+                      <h3 className={styles.cardTitle} style={{
+                        fontSize: '1.5rem',
+                        color: '#92400e',
+                        margin: 0
+                      }}>
+                        Fast geschafft!
+                      </h3>
+                    </div>
+                    
+                    <p style={{
+                      marginBottom: '2rem',
+                      fontSize: '1.1rem',
+                      color: '#b45309',
+                      fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                      lineHeight: '1.6'
+                    }}>
+                      Deine Veranstaltung ist bereit! Klicke auf "Fertigstellen" 
+                      um alles zu speichern und die Veranstaltung zu erstellen.
+                    </p>
+                    
+                    <button
+                      onClick={() => handleSaveSchedule((createdDayPlan || editingDayPlan)?.schedule || [])}
+                      style={{
+                        padding: '1.25rem 2.5rem',
+                        border: '3px solid var(--color-ink)',
+                        borderRadius: '16px',
+                        backgroundColor: '#f59e0b',
+                        color: '#fff',
+                        fontWeight: '700',
+                        fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
+                        fontSize: '1.3rem',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.75rem',
-                        marginBottom: '1rem'
-                      }}>
-                        <CheckCircle size={32} color="#10b981" />
-                        <h3 style={{
-                          fontSize: '1.3rem',
-                          fontWeight: '700',
-                          color: '#047857',
-                          margin: 0,
-                          fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif'
-                        }}>
-                          Fast geschafft!
-                        </h3>
-                      </div>
-                      
-                      <p style={{
-                        marginBottom: '1.5rem',
-                        fontSize: '1rem',
-                        color: '#059669',
-                        fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                        lineHeight: '1.4'
-                      }}>
-                        Deine Veranstaltung ist bereit. Klicke auf "Fertigstellen" um alles zu speichern und die Veranstaltung zu erstellen.
-                      </p>
-                      
-                      <button
-                        onClick={() => handleSaveSchedule(createdDayPlan.schedule)}
-                        style={{
-                          padding: '1.2rem 2rem',
-                          border: '3px solid #047857',
-                          borderRadius: '1.2rem 1.4rem 1rem 1.3rem',
-                          backgroundColor: '#10b981',
-                          color: '#ffffff',
-                          fontWeight: '700',
-                          fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
-                          fontSize: '1.2rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.75rem',
-                          cursor: 'pointer',
-                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                          boxShadow: '4px 8px 0 #047857, inset 0 2px 0 rgba(255,255,255,0.3)',
-                          width: '100%',
-                          justifyContent: 'center'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)';
-                          e.currentTarget.style.boxShadow = '6px 12px 0 #047857, inset 0 2px 0 rgba(255,255,255,0.3)';
-                          e.currentTarget.style.backgroundColor = '#059669';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                          e.currentTarget.style.boxShadow = '4px 8px 0 #047857, inset 0 2px 0 rgba(255,255,255,0.3)';
-                          e.currentTarget.style.backgroundColor = '#10b981';
-                        }}
-                      >
-                        <CheckCircle size={24} /> 
-                        Veranstaltung fertigstellen
-                      </button>
-                    </div>
+                        gap: '1rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        boxShadow: '0 6px 0 var(--color-ink), 0 4px 20px rgba(245, 158, 11, 0.3)',
+                        width: '100%',
+                        justifyContent: 'center'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
+                        e.currentTarget.style.boxShadow = '0 9px 0 var(--color-ink), 0 6px 25px rgba(245, 158, 11, 0.4)';
+                        e.currentTarget.style.backgroundColor = '#d97706';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                        e.currentTarget.style.boxShadow = '0 6px 0 var(--color-ink), 0 4px 20px rgba(245, 158, 11, 0.3)';
+                        e.currentTarget.style.backgroundColor = '#f59e0b';
+                      }}
+                    >
+                      <CheckCircle size={28} /> 
+                      {editingEvent || editingDayPlan ? 'Änderungen speichern' : 'Veranstaltung fertigstellen'}
+                    </button>
                   </div>
                 </div>
               </div>
             )}
           </div>
-          
-          {/* Add slide animation styles */}
-          <style>
-            {`
-              @keyframes slideInFromLeft {
-                from {
-                  opacity: 0;
-                  transform: translateX(-50px);
-                }
-                to {
-                  opacity: 1;
-                  transform: translateX(0);
-                }
-              }
-              
-              @keyframes slideInFromRight {
-                from {
-                  opacity: 0;
-                  transform: translateX(50px);
-                }
-                to {
-                  opacity: 1;
-                  transform: translateX(0);
-                }
-              }
-            `}
-          </style>
         </div>
       </div>
     </div>

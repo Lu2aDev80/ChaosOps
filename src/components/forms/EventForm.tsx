@@ -33,8 +33,8 @@ const EventForm: React.FC<EventFormProps> = ({
   return (
     <div className={styles.adminCard} style={{ 
       width: '100%', 
-      maxWidth: '500px',
-      margin: '0 1rem'
+      maxWidth: '900px',
+      margin: '0 auto'
     }}>
       <div className={styles.tape} aria-hidden="true"></div>
       

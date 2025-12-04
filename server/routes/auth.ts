@@ -6,6 +6,7 @@ import prisma from '../../src/services/db'
 import { logger } from '../logger'
 import { sendMail, isEmailEnabled, sendMailSafe } from "../mailer";
 import { renderVerificationEmail } from "../templates/verificationEmail";
+import { generateVerificationURL } from "../utils/urlHelper";
 
 const router = Router();
 
@@ -23,13 +24,7 @@ async function sendVerificationEmailSafe(
   }
 
   try {
-    const basePath = process.env.APP_BASE_PATH || '';
-    // In production, use FRONTEND_HOST; in dev, try to construct from request
-    const frontendHost = process.env.FRONTEND_HOST || 
-                         (process.env.NODE_ENV === 'production' 
-                           ? 'https://lu2adevelopment.de' 
-                           : `${req.protocol}://${req.get("host")}`);
-    const verificationLink = `${frontendHost}${basePath}/verify-email?token=${token}`;
+    const verificationLink = generateVerificationURL(token, req);
     const emailHtml = renderVerificationEmail(username, orgName, verificationLink);
     
     const result = await sendMail({

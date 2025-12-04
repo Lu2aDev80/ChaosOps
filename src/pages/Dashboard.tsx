@@ -304,11 +304,26 @@ const Dashboard: React.FC = () => {
     return (
       <EventCreationWizard
         organizationId={orgId!}
-        onClose={() => setShowWizard(false)}
-        onCreated={(newEvent) => {
-          setEventsState([...events, newEvent]);
-          setSelectedEvent(newEvent);
+        editingEvent={editingEvent}
+        editingDayPlan={editingDayPlan}
+        onClose={() => {
           setShowWizard(false);
+          setEditingEvent(null);
+          setEditingDayPlan(null);
+        }}
+        onCreated={(newEvent) => {
+          if (editingEvent) {
+            // Update existing event in the list
+            setEventsState(events.map(e => e.id === editingEvent.id ? newEvent : e));
+            setSelectedEvent(newEvent);
+          } else {
+            // Add new event
+            setEventsState([...events, newEvent]);
+            setSelectedEvent(newEvent);
+          }
+          setShowWizard(false);
+          setEditingEvent(null);
+          setEditingDayPlan(null);
         }}
       />
     );
@@ -494,12 +509,25 @@ const Dashboard: React.FC = () => {
         {/* Content Grid */}
         <div
           style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "clamp(1.25rem, 3vw, 2rem)",
+            maxWidth: "900px",
+            margin: "0 auto",
+            width: "100%"
+          }}
+        >
+        <div
+          style={{
             display: "grid",
             gridTemplateColumns: selectedEvent
               ? "repeat(auto-fit, minmax(min(100%, 380px), 1fr))"
               : "1fr",
             gap: "clamp(1.25rem, 3vw, 2rem)",
             alignItems: "start",
+            width: "100%",
+            maxWidth: "900px"
           }}
         >
           {/* Events List */}
@@ -687,7 +715,7 @@ const Dashboard: React.FC = () => {
                           onClick={(e) => {
                             e.stopPropagation();
                             setEditingEvent(event);
-                            setShowEventForm(true);
+                            setShowWizard(true);
                           }}
                           style={{
                             padding: "0.5rem",
@@ -1037,7 +1065,7 @@ const Dashboard: React.FC = () => {
                             <button
                               onClick={() => {
                                 setEditingDayPlan(dayPlan);
-                                setShowDayPlanForm(true);
+                                setShowWizard(true);
                               }}
                               style={{
                                 padding: "0.5rem",
@@ -1101,6 +1129,7 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
           )}
+        </div>
         </div>
       </main>
 

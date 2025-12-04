@@ -10,6 +10,7 @@ import emailRoutes from "./routes/email";
 import uploadRoutes from './routes/upload';
 import { logger } from "./logger";
 import { testConnection, isEmailEnabled } from "./mailer";
+import { validateURLGeneration } from "./utils/urlHelper";
 
 const app = express();
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
@@ -75,6 +76,16 @@ app.get(`${apiBase}/health`, (_req: Request, res: Response) => {
     emailEnabled: isEmailEnabled(),
     basePath: BASE_PATH || '/'
   });
+});
+
+// URL validation endpoint (for development/debugging)
+app.get(`${apiBase}/debug/urls`, (req: Request, res: Response) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  
+  const validation = validateURLGeneration(req);
+  res.json(validation);
 });
 
 // Routes

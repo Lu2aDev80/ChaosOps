@@ -5,6 +5,7 @@ import { requireAuth } from '../middleware/session'
 import { sendMailSafe } from '../mailer'
 import { userInvitationEmail } from '../templates/userInvitationEmail'
 import { invitationEmail } from '../templates/invitationEmail'
+import { generateInvitationURL } from '../utils/urlHelper'
 
 // Extend Request type to include user from session
 interface AuthRequest extends Request {
@@ -261,8 +262,7 @@ router.post('/:id/users', requireAuth, async (req: AuthRequest, res) => {
     })
 
     // Build invitation URL
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
-    const invitationUrl = `${baseUrl}/minihackathon/accept-invitation?token=${token}`
+    const invitationUrl = generateInvitationURL(token, req);
     
     const emailSent = await sendMailSafe({
       to: email,

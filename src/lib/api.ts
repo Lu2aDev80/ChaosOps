@@ -182,6 +182,9 @@ export const api = {
   listEvents(organisationId: string): Promise<any[]> {
     return json<any[]>(`/api/organisations/${organisationId}/events`)
   },
+  getEvent(eventId: string): Promise<any> {
+    return json<any>(`/api/events/${eventId}`)
+  },
   createEvent(organisationId: string, data: { name: string; description?: string }): Promise<any> {
     return json<any>(`/api/organisations/${organisationId}/events`, {
       method: 'POST',
@@ -189,11 +192,39 @@ export const api = {
       body: JSON.stringify(data),
     })
   },
+  updateEvent(eventId: string, data: { name: string; description?: string }): Promise<any> {
+    return json<any>(`/api/events/${eventId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+  },
+  deleteEvent(eventId: string): Promise<{ success: boolean; message: string }> {
+    return json<{ success: boolean; message: string }>(`/api/events/${eventId}`, {
+      method: 'DELETE',
+    })
+  },
+  // Day Plans
+  getDayPlan(dayPlanId: string): Promise<any> {
+    return json<any>(`/api/day-plans/${dayPlanId}`)
+  },
   createDayPlan(eventId: string, data: { name: string; date: string; schedule?: Array<any> }): Promise<any> {
     return json<any>(`/api/events/${eventId}/day-plans`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
+    })
+  },
+  updateDayPlan(dayPlanId: string, data: { name?: string; date?: string; schedule?: Array<any> }): Promise<any> {
+    return json<any>(`/api/day-plans/${dayPlanId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+  },
+  deleteDayPlan(dayPlanId: string): Promise<{ success: boolean; message: string }> {
+    return json<{ success: boolean; message: string }>(`/api/day-plans/${dayPlanId}`, {
+      method: 'DELETE',
     })
   },
 };
