@@ -196,49 +196,13 @@ const DevicePairingDisplay = () => {
     <div style={{
       minHeight: '100vh',
       background: 'repeating-linear-gradient(0deg, #fffef0 0px, #fffef0 39px, #e5e7eb 40px, #fffef0 41px)',
-      padding: '3rem 2rem',
+      padding: assignedDayPlan && eventStatus.status === 'running' ? '0' : '3rem 2rem',
       display: 'flex',
       flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: assignedDayPlan && eventStatus.status === 'running' ? 'stretch' : 'center',
+      justifyContent: assignedDayPlan && eventStatus.status === 'running' ? 'flex-start' : 'center',
       position: 'relative'
     }}>
-      {/* Flipchart Holes */}
-      <div style={{
-        position: 'absolute',
-        top: '12px',
-        left: '12vw',
-        width: '32px',
-        height: '32px',
-        background: '#e5e7eb',
-        borderRadius: '50%',
-        boxShadow: '0 2px 8px #bbb inset',
-        zIndex: 10
-      }} />
-      <div style={{
-        position: 'absolute',
-        top: '12px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: '32px',
-        height: '32px',
-        background: '#e5e7eb',
-        borderRadius: '50%',
-        boxShadow: '0 2px 8px #bbb inset',
-        zIndex: 10
-      }} />
-      <div style={{
-        position: 'absolute',
-        top: '12px',
-        right: '12vw',
-        width: '32px',
-        height: '32px',
-        background: '#e5e7eb',
-        borderRadius: '50%',
-        boxShadow: '0 2px 8px #bbb inset',
-        zIndex: 10
-      }} />
-
       {/* Show pairing code screen */}
       {!isPaired && !assignedDayPlan && (
       <div style={{
