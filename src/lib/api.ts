@@ -46,6 +46,8 @@ export type AcceptInvitationResponse = {
 };
 
 // Get API base URL from environment or use the base path for local development
+// In production with absolute URL: https://lu2adevelopment.de/minihackathon/api
+// In development or fallback: /minihackathon/api (relative to current origin)
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/minihackathon/api';
 
 // Log the API URL in development for debugging
@@ -55,6 +57,11 @@ if (import.meta.env.DEV) {
 
 async function json<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
   const url = typeof input === 'string' ? `${API_BASE_URL}${input}` : input;
+  
+  if (import.meta.env.DEV) {
+    console.log('Fetching:', url);
+  }
+  
   const res = await fetch(url, { credentials: "include", ...init });
   if (!res.ok) {
     let err: { error: string } | null = null;
