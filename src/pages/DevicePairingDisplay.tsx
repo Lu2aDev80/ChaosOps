@@ -1,17 +1,16 @@
 import { useEffect, useState, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
 import type { DayPlan } from '../types/schedule';
 
-interface PairingData {
-  code: string;
-  deviceId: string;
+interface StatusResponse {
+  status: string;
+  isPaired: boolean;
+  organisationId: string | null;
+  deviceName: string | null;
+  dayPlan: DayPlan | null;
 }
 
-interface PairedData {
-  orgId: string;
-  displayId: string;
-  deviceName?: string;
-}
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/minihackathon/api';
+const POLL_INTERVAL = 3000; // Poll every 3 seconds
 
 const DevicePairingDisplay = () => {
   const [pairingCode, setPairingCode] = useState<string>('');
@@ -20,12 +19,13 @@ const DevicePairingDisplay = () => {
   const [assignedDayPlan, setAssignedDayPlan] = useState<DayPlan | null>(null);
   const [error, setError] = useState<string>('');
   const [currentTime, setCurrentTime] = useState(new Date());
-  const socketRef = useRef<Socket | null>(null);
+  const pollingIntervalRef = useRef<number | null>(null);
 
   // Load saved state from localStorage on mount
   useEffect(() => {
     const savedDayPlan = localStorage.getItem('assignedDayPlan');
     const savedPaired = localStorage.getItem('displayPaired');
+    const savedDeviceId = localStorage.getItem('displayId');
     
     if (savedDayPlan) {
       try {
@@ -37,6 +37,10 @@ const DevicePairingDisplay = () => {
     
     if (savedPaired === 'true') {
       setIsPaired(true);
+    }
+
+    if (savedDeviceId) {
+      setDeviceId(savedDeviceId);
     }
   }, []);
 
@@ -92,77 +96,100 @@ const DevicePairingDisplay = () => {
 
   const eventStatus = getEventStatus();
 
-
-
+  // Initialize display and get pairing code
   useEffect(() => {
-    // Connect to Socket.IO server
-    // In dev: uses relative path /minihackathon/socket.io/ (proxied by Vite to localhost:3000)
-    // In prod: uses relative path /minihackathon/socket.io/ (served by production server)
-    const socketOptions = {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: 5,
-      path: '/minihackathon/socket.io/'
+    const initializeDisplay = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/displays/pairing/init`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to initialize display');
+        }
+
+        const data = await response.json();
+        console.log('Display initialized:', data);
+        setPairingCode(data.code);
+        setDeviceId(data.deviceId);
+        localStorage.setItem('displayId', data.deviceId);
+        setError('');
+      } catch (err: any) {
+        console.error('Error initializing display:', err);
+        setError('Verbindung zum Server fehlgeschlagen');
+      }
     };
-    
-    if (import.meta.env.DEV) {
-      console.log('Connecting to Socket.IO with options:', socketOptions);
+
+    // Only initialize if we don't have a device ID
+    if (!deviceId) {
+      initializeDisplay();
     }
-    
-    const socket = io(socketOptions);
+  }, [deviceId]);
 
-    socketRef.current = socket;
+  // Poll for status updates
+  useEffect(() => {
+    if (!deviceId) return;
 
-    socket.on('connect', () => {
-      console.log('Connected to socket server with ID:', socket.id);
-      // Request pairing code on connection
-      socket.emit('request-pairing-code');
-    });
+    const pollStatus = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/displays/pairing/status/${deviceId}`, {
+          credentials: 'include'
+        });
 
-    // Listen for pairing code
-    socket.on('pairing-code', (data: PairingData) => {
-      console.log('Received pairing code:', data);
-      setPairingCode(data.code);
-      setDeviceId(data.deviceId);
-      setError('');
-    });
+        if (!response.ok) {
+          if (response.status === 404) {
+            // Device not found, reinitialize
+            localStorage.removeItem('displayId');
+            localStorage.removeItem('displayPaired');
+            localStorage.removeItem('displayOrgId');
+            setDeviceId('');
+            return;
+          }
+          throw new Error('Failed to fetch status');
+        }
 
-    // Listen for successful pairing
-    socket.on('paired', (data: PairedData) => {
-      console.log('Device paired successfully:', data);
-      setIsPaired(true);
-      
-      // Store pairing info in localStorage
-      localStorage.setItem('displayPaired', 'true');
-      localStorage.setItem('displayOrgId', data.orgId);
-      localStorage.setItem('displayId', data.displayId);
-    });
+        const data: StatusResponse = await response.json();
+        console.log('Status update:', data);
 
-    // Listen for day plan assignment from admin
-    socket.on('dayplan-assigned', (dayPlan: DayPlan) => {
-      console.log('Day plan assigned:', dayPlan);
-      setAssignedDayPlan(dayPlan);
-      // Save to localStorage for persistence
-      localStorage.setItem('assignedDayPlan', JSON.stringify(dayPlan));
-    });
+        // Update pairing status
+        if (data.isPaired && !isPaired) {
+          setIsPaired(true);
+          localStorage.setItem('displayPaired', 'true');
+          localStorage.setItem('displayOrgId', data.organisationId || '');
+          console.log('Device paired successfully');
+        }
 
-    // Listen for errors
-    socket.on('error', (data: { message: string }) => {
-      console.error('Socket error:', data);
-      setError(data.message || 'Ein Fehler ist aufgetreten');
-    });
+        // Update day plan if assigned
+        if (data.dayPlan) {
+          const dayPlanChanged = JSON.stringify(data.dayPlan) !== JSON.stringify(assignedDayPlan);
+          if (dayPlanChanged) {
+            console.log('Day plan assigned:', data.dayPlan);
+            setAssignedDayPlan(data.dayPlan);
+            localStorage.setItem('assignedDayPlan', JSON.stringify(data.dayPlan));
+          }
+        }
 
-    socket.on('connect_error', (err) => {
-      console.error('Connection error:', err);
-      setError('Verbindung zum Server fehlgeschlagen');
-    });
-
-    return () => {
-      socket.disconnect();
+        setError('');
+      } catch (err: any) {
+        console.error('Error polling status:', err);
+        // Don't show error for every failed poll - only log it
+      }
     };
-  }, []);
+
+    // Poll immediately on mount
+    pollStatus();
+
+    // Set up polling interval
+    pollingIntervalRef.current = window.setInterval(pollStatus, POLL_INTERVAL);
+
+    // Cleanup on unmount
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, [deviceId, isPaired, assignedDayPlan]);
 
   return (
     <div style={{

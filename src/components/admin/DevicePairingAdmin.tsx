@@ -37,7 +37,7 @@ const DevicePairingAdmin: React.FC<DevicePairingAdminProps> = ({ onSuccess, orgI
 
   const loadEvents = useCallback(async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const apiUrl = import.meta.env.VITE_API_URL || '/minihackathon/api';
       const response = await fetch(`${apiUrl}/organisations/${orgId}/events`, {
         credentials: 'include'
       });
@@ -76,7 +76,7 @@ const DevicePairingAdmin: React.FC<DevicePairingAdminProps> = ({ onSuccess, orgI
     setError(null);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const apiUrl = import.meta.env.VITE_API_URL || '/minihackathon/api';
       const response = await fetch(`${apiUrl}/displays/pairing/register`, {
         method: 'POST',
         headers: {
@@ -126,7 +126,7 @@ const DevicePairingAdmin: React.FC<DevicePairingAdminProps> = ({ onSuccess, orgI
     setError(null);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const apiUrl = import.meta.env.VITE_API_URL || '/minihackathon/api';
       const response = await fetch(`${apiUrl}/displays/pairing/${pairedDevice.id}/dayplan`, {
         method: 'PUT',
         headers: {

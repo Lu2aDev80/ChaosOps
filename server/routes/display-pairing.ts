@@ -5,6 +5,109 @@ import { logger } from '../logger';
 const router = express.Router();
 const prisma = new PrismaClient();
 
+// Generate a random 6-digit pairing code
+function generatePairingCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Check if a pairing code is unique
+async function isCodeUnique(code: string): Promise<boolean> {
+  const existing = await prisma.display.findUnique({
+    where: { pairingCode: code }
+  });
+  return !existing;
+}
+
+// Generate a unique pairing code
+async function generateUniquePairingCode(): Promise<string> {
+  let code = generatePairingCode();
+  let attempts = 0;
+  const maxAttempts = 10;
+
+  while (!(await isCodeUnique(code)) && attempts < maxAttempts) {
+    code = generatePairingCode();
+    attempts++;
+  }
+
+  if (attempts >= maxAttempts) {
+    throw new Error('Failed to generate unique pairing code');
+  }
+
+  return code;
+}
+
+// POST /api/displays/pairing/init
+// Initialize a display and get a pairing code
+router.post('/displays/pairing/init', async (req: Request, res: Response) => {
+  try {
+    // Generate unique pairing code
+    const pairingCode = await generateUniquePairingCode();
+
+    // Create display entry in database
+    const display = await prisma.display.create({
+      data: {
+        pairingCode,
+        socketId: null, // No longer using socket IDs
+        status: DeviceStatus.PENDING,
+        name: `Display ${pairingCode}`
+      }
+    });
+
+    logger.info(`Display created with pairing code: ${pairingCode} (${display.id})`);
+
+    res.json({
+      success: true,
+      code: pairingCode,
+      deviceId: display.id
+    });
+
+  } catch (error) {
+    logger.error('Error initializing display:', error);
+    res.status(500).json({ error: 'Failed to generate pairing code' });
+  }
+});
+
+// GET /api/displays/pairing/status/:deviceId
+// Poll for display status, pairing info, and assigned day plan
+router.get('/displays/pairing/status/:deviceId', async (req: Request, res: Response) => {
+  try {
+    const { deviceId } = req.params;
+
+    const display = await prisma.display.findUnique({
+      where: { id: deviceId }
+    });
+
+    if (!display) {
+      return res.status(404).json({ error: 'Display not found' });
+    }
+
+    // If display has a day plan assigned, fetch it separately
+    let dayPlan = null;
+    if (display.currentDayPlanId) {
+      dayPlan = await prisma.dayPlan.findUnique({
+        where: { id: display.currentDayPlanId },
+        include: {
+          scheduleItems: {
+            orderBy: { position: 'asc' }
+          }
+        }
+      });
+    }
+
+    res.json({
+      status: display.status,
+      isPaired: display.status === DeviceStatus.PAIRED,
+      organisationId: display.organisationId,
+      deviceName: display.name,
+      dayPlan: dayPlan
+    });
+
+  } catch (error) {
+    logger.error('Error fetching display status:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // POST /api/displays/pairing/register
 // Register a display by pairing code
 router.post('/displays/pairing/register', async (req: Request, res: Response) => {
@@ -27,8 +130,6 @@ router.post('/displays/pairing/register', async (req: Request, res: Response) =>
       return res.status(404).json({ error: 'Invalid pairing code' });
     }
 
-    logger.info(`Display found with pairing code ${pairingCode}: socketId=${display.socketId}`);
-
     if (display.status === DeviceStatus.PAIRED) {
       logger.warn(`Display registration failed: Display already paired ${pairingCode}`);
       return res.status(400).json({ error: 'Display is already paired' });
@@ -46,18 +147,7 @@ router.post('/displays/pairing/register', async (req: Request, res: Response) =>
 
     logger.info(`Display paired successfully: ${updatedDisplay.id} to org ${organisationId}`);
 
-    // Emit 'paired' event to the display via Socket.IO
-    const io = req.app.locals.io;
-    if (io && display.socketId) {
-      try {
-        logger.info(`Attempting to emit 'paired' event to socket ${display.socketId}`);
-        await io.emitToPairedDevice(display.socketId, organisationId, updatedDisplay.id, deviceName);
-      } catch (error) {
-        logger.error('Error emitting paired event:', error);
-      }
-    }
-
-    // Return display info
+    // Return display info - display will pick this up via polling
     res.json({
       success: true,
       display: updatedDisplay
@@ -98,16 +188,7 @@ router.put('/displays/pairing/:displayId/dayplan', async (req: Request, res: Res
       return res.status(400).json({ error: 'dayPlanId is required' });
     }
 
-    // Update display with dayPlanId
-    const updatedDisplay = await prisma.display.update({
-      where: { id: displayId },
-      data: { currentDayPlanId: dayPlanId }
-    });
-
-    logger.info(`DayPlan ${dayPlanId} assigned to display ${displayId}`);
-    logger.info(`Display socketId for emission: ${updatedDisplay.socketId}`);
-
-    // Fetch the full DayPlan data to send via socket
+    // Verify the DayPlan exists
     const dayPlan = await prisma.dayPlan.findUnique({
       where: { id: dayPlanId },
       include: {
@@ -122,23 +203,19 @@ router.put('/displays/pairing/:displayId/dayplan', async (req: Request, res: Res
       return res.status(404).json({ error: 'DayPlan not found' });
     }
 
-    // Emit event to display via Socket.IO with full DayPlan data
-    const io = req.app.locals.io;
-    if (io && updatedDisplay.socketId) {
-      try {
-        logger.info(`Attempting to emit dayplan-assigned event to socket ${updatedDisplay.socketId}`);
-        await io.emitDayPlanUpdate(updatedDisplay.socketId, dayPlan);
-        logger.info(`Successfully emitted dayplan-assigned event to socket ${updatedDisplay.socketId}`);
-      } catch (error) {
-        logger.error('Error emitting dayplan update:', error);
-      }
-    } else {
-      logger.warn(`Cannot emit: io=${!!io}, socketId=${updatedDisplay.socketId}`);
-    }
+    // Update display with dayPlanId
+    const updatedDisplay = await prisma.display.update({
+      where: { id: displayId },
+      data: { currentDayPlanId: dayPlanId }
+    });
 
+    logger.info(`DayPlan ${dayPlanId} assigned to display ${displayId}`);
+
+    // Display will pick this up via polling
     res.json({
       success: true,
-      display: updatedDisplay
+      display: updatedDisplay,
+      dayPlan: dayPlan
     });
 
   } catch (error) {
