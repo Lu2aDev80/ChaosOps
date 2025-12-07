@@ -205,9 +205,6 @@ const DevicePairingDisplay = () => {
       justifyContent: assignedDayPlan && eventStatus.status === 'running' ? 'flex-start' : 'center',
       position: 'relative'
     }}>
-<<<<<<< HEAD
-=======
-      {/* Zurück Button */}
       <button
         onClick={() => navigate(-1)}
         style={{
@@ -264,8 +261,6 @@ const DevicePairingDisplay = () => {
         boxShadow: '0 2px 8px #bbb inset',
         zIndex: 10
       }} />
-
->>>>>>> b57b34e168e5e1b2182788f3f770c8bbc38f4110
       {/* Show pairing code screen */}
       {!isPaired && !assignedDayPlan && (
       <div
