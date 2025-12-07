@@ -18,6 +18,7 @@ import { CookieBanner } from "./components/ui";
 import Impressum from "./pages/Impressum";
 import AGB from "./pages/AGB";
 import DSGVO from "./pages/DSGVO";
+import Error404 from "./pages/Error404";
 import TermsAccept from "./pages/TermsAccept";
 
 function App() {
@@ -41,6 +42,7 @@ function App() {
           <Route path="/agb" element={<AGB />} />
           <Route path="/dsgvo" element={<DSGVO />} />
           <Route path="/terms-accept" element={<TermsAccept />} />
+          <Route path="*" element={<Error404 />} />
         </Routes>
       </div>
       <Footer />
