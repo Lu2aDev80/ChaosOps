@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { DayPlan } from '../types/schedule';
 import Planer from '../components/planner/Planer';
 
@@ -14,6 +15,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '/minihackathon/api';
 const POLL_INTERVAL = 3000; // Poll every 3 seconds
 
 const DevicePairingDisplay = () => {
+  const navigate = useNavigate();
   const [pairingCode, setPairingCode] = useState<string>('');
   const [deviceId, setDeviceId] = useState<string>('');
   const [isPaired, setIsPaired] = useState<boolean>(false);
@@ -203,21 +205,85 @@ const DevicePairingDisplay = () => {
       justifyContent: assignedDayPlan && eventStatus.status === 'running' ? 'flex-start' : 'center',
       position: 'relative'
     }}>
+<<<<<<< HEAD
+=======
+      {/* Zurück Button */}
+      <button
+        onClick={() => navigate(-1)}
+        style={{
+          position: 'absolute',
+          top: 24,
+          left: 24,
+          background: '#f1f5f9',
+          border: '2px solid #181818',
+          borderRadius: '8px',
+          padding: '0.5rem 1.2rem',
+          fontFamily: 'Inter, Roboto, Arial, sans-serif',
+          fontSize: '1rem',
+          fontWeight: 600,
+          color: '#181818',
+          cursor: 'pointer',
+          boxShadow: '2px 2px 0 #e5e7eb',
+          zIndex: 100
+        }}
+      >
+        ← Zurück
+      </button>
+      {/* Flipchart Holes */}
+      <div style={{
+        position: 'absolute',
+        top: '12px',
+        left: '12vw',
+        width: '32px',
+        height: '32px',
+        background: '#e5e7eb',
+        borderRadius: '50%',
+        boxShadow: '0 2px 8px #bbb inset',
+        zIndex: 10
+      }} />
+      <div style={{
+        position: 'absolute',
+        top: '12px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '32px',
+        height: '32px',
+        background: '#e5e7eb',
+        borderRadius: '50%',
+        boxShadow: '0 2px 8px #bbb inset',
+        zIndex: 10
+      }} />
+      <div style={{
+        position: 'absolute',
+        top: '12px',
+        right: '12vw',
+        width: '32px',
+        height: '32px',
+        background: '#e5e7eb',
+        borderRadius: '50%',
+        boxShadow: '0 2px 8px #bbb inset',
+        zIndex: 10
+      }} />
+
+>>>>>>> b57b34e168e5e1b2182788f3f770c8bbc38f4110
       {/* Show pairing code screen */}
       {!isPaired && !assignedDayPlan && (
-      <div style={{
-        background: '#fff',
-        borderRadius: '1.2rem 1.35rem 1.15rem 1.25rem',
-        boxShadow: '2px 4px 0 #e5e7eb, 0 2px 8px 0 rgba(0,0,0,0.08)',
-        padding: '3rem 2.5rem',
-        border: '2px solid #181818',
-        maxWidth: '700px',
-        width: '100%',
-        position: 'relative',
-        transform: 'rotate(-0.3deg)',
-        zIndex: 1,
-        textAlign: 'center'
-      }}>
+      <div
+        style={{
+          background: '#fff',
+          borderRadius: '1.2rem 1.35rem 1.15rem 1.25rem',
+          boxShadow: '2px 4px 0 #e5e7eb, 0 2px 8px 0 rgba(0,0,0,0.08)',
+          padding: '3rem 2.5rem',
+          border: '2px solid #181818',
+          maxWidth: '700px',
+          width: '100%',
+          position: 'relative',
+          transform: 'rotate(-0.3deg)',
+          zIndex: 1,
+          textAlign: 'center',
+          boxSizing: 'border-box',
+        }}
+      >
         {/* Tape */}
         <div style={{
           position: 'absolute',
@@ -272,23 +338,38 @@ const DevicePairingDisplay = () => {
               Gib diesen Code in den Admin-Einstellungen ein:
             </p>
 
-            <div style={{
-              backgroundColor: '#f3f4f6',
-              border: '3px solid #181818',
-              borderRadius: '12px',
-              padding: '2rem 3rem',
-              marginBottom: '2rem',
-              boxShadow: '3px 6px 0 #181818'
-            }}>
-              <div style={{
-                fontFamily: 'monospace',
-                fontSize: 'clamp(4rem, 10vw, 7rem)',
-                fontWeight: '800',
-                color: '#0284c7',
-                letterSpacing: '0.3em',
-                textAlign: 'center',
-                fontVariantNumeric: 'tabular-nums'
-              }}>
+            <div
+              style={{
+                backgroundColor: '#f3f4f6',
+                border: '3px solid #181818',
+                borderRadius: '12px',
+                padding: '2rem 3rem',
+                marginBottom: '2rem',
+                boxShadow: '3px 6px 0 #181818',
+                maxWidth: '100%',
+                width: '100%',
+                boxSizing: 'border-box',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                overflow: 'auto',
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: 'monospace',
+                  fontSize: 'clamp(2.5rem, 8vw, 6rem)',
+                  fontWeight: '800',
+                  color: '#0284c7',
+                  letterSpacing: '0.15em',
+                  textAlign: 'center',
+                  fontVariantNumeric: 'tabular-nums',
+                  width: '100%',
+                  overflowWrap: 'break-word',
+                  wordBreak: 'break-all',
+                  userSelect: 'all',
+                }}
+              >
                 {pairingCode}
               </div>
             </div>

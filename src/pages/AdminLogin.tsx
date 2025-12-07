@@ -30,6 +30,7 @@ const AdminLogin: React.FC = () => {
   }>({ api: false, db: false, loading: true, lastCheck: null });
   
   // Modal states
+  // Es kann immer nur ein Modal offen sein, type steuert das eindeutig
   const [modalState, setModalState] = useState<{
     type: 'none' | 'confirm-resend' | 'alert' | 'resend-email';
     title: string;
@@ -40,7 +41,25 @@ const AdminLogin: React.FC = () => {
     type: 'none',
     title: '',
     message: '',
+    alertType: undefined,
+    userEmail: undefined,
   });
+
+  // Hilfsfunktion: Modal robust öffnen
+  const openModal = (modal: typeof modalState) => {
+    setModalState({
+      type: modal.type,
+      title: modal.title,
+      message: modal.message,
+      alertType: modal.alertType,
+      userEmail: modal.userEmail,
+    });
+  };
+
+  // Hilfsfunktion: Modal garantiert schließen
+  const closeModal = () => {
+    setModalState({ type: 'none', title: '', message: '', alertType: undefined, userEmail: undefined });
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -127,7 +146,7 @@ const AdminLogin: React.FC = () => {
         const emailToUse = errorData.email || 
                           (credentials.username.includes("@") ? credentials.username : null);
         
-        setModalState({
+        openModal({
           type: 'confirm-resend',
           title: 'E-Mail nicht bestätigt',
           message: 'Deine E-Mail-Adresse ist noch nicht bestätigt. Möchtest du eine neue Bestätigungs-E-Mail erhalten?',
@@ -135,7 +154,7 @@ const AdminLogin: React.FC = () => {
           userEmail: emailToUse || undefined,
         });
       } else {
-        setModalState({
+        openModal({
           type: 'alert',
           title: 'Login fehlgeschlagen',
           message: errorMessage,
@@ -150,7 +169,7 @@ const AdminLogin: React.FC = () => {
     
     // If no email provided, show input modal
     if (!email) {
-      setModalState({
+      openModal({
         type: 'resend-email',
         title: 'E-Mail-Adresse eingeben',
         message: 'Bitte gib deine E-Mail-Adresse ein, um eine neue Bestätigungs-E-Mail zu erhalten.',
@@ -177,9 +196,6 @@ const AdminLogin: React.FC = () => {
     }
   };
 
-  const closeModal = () => {
-    setModalState({ type: 'none', title: '', message: '' });
-  };
 
   const cardStyle = {
     background: "#fff",

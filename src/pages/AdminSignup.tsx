@@ -24,12 +24,23 @@ const AdminSignup: React.FC = () => {
     user: any;
     message: string;
   } | null>(null);
+  // Es kann immer nur ein Modal offen sein
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
     title: string;
     message: string;
     type: 'info' | 'success' | 'warning' | 'error';
   }>({ isOpen: false, title: '', message: '', type: 'info' });
+
+  // Hilfsfunktion: Modal robust öffnen
+  const openModal = (modal: Omit<typeof modalState, 'isOpen'>) => {
+    setModalState({ ...modal, isOpen: true });
+  };
+
+  // Hilfsfunktion: Modal garantiert schließen
+  const closeModal = () => {
+    setModalState({ isOpen: false, title: '', message: '', type: 'info' });
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,8 +50,7 @@ const AdminSignup: React.FC = () => {
       !form.adminEmail ||
       !form.password
     ) {
-      setModalState({
-        isOpen: true,
+      openModal({
         title: 'Fehlende Angaben',
         message: 'Bitte fülle alle Pflichtfelder aus!',
         type: 'warning',
@@ -49,8 +59,7 @@ const AdminSignup: React.FC = () => {
     }
     
     if (form.password.length < 6) {
-      setModalState({
-        isOpen: true,
+      openModal({
         title: 'Passwort zu schwach',
         message: 'Das Passwort muss mindestens 6 Zeichen lang sein.',
         type: 'warning',
@@ -64,8 +73,7 @@ const AdminSignup: React.FC = () => {
       setSignupResult(data);
       setSignupSuccess(true);
     } catch (err: any) {
-      setModalState({
-        isOpen: true,
+      openModal({
         title: 'Registrierung fehlgeschlagen',
         message: err.message || 'Ein unbekannter Fehler ist aufgetreten.',
         type: 'error',

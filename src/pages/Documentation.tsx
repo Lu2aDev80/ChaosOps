@@ -1,4 +1,5 @@
 import React from 'react';
+import Footer from '../components/ui/Footer';
 import { useNavigate } from 'react-router-dom';
 import { 
   Home, 
@@ -912,12 +913,6 @@ const Documentation: React.FC = () => {
         </div>
       </main>
       
-      <footer className={styles.footer}>
-        <span className={styles.footerIcon} aria-hidden="true">
-          <Home size={16} />
-        </span>
-        <span>Chaos Ops – Deine Events, deine Planung</span>
-      </footer>
     </div>
   );
 };

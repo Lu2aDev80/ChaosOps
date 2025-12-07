@@ -4,7 +4,35 @@ import { LogIn, Monitor, Calendar, BookOpen, Mail, X } from "lucide-react";
 import FlipchartBackground from "../components/layout/FlipchartBackground";
 import styles from "./Admin.module.css";
 import chaosOpsLogo from "../assets/Chaos-Ops Logo.png";
-import sleepGremlin from "../assets/gremlins/sleep.png";
+
+import Gremlin from "../components/ui/Gremlin";
+import HelpChat from "../components/ui/HelpChat";
+
+// Widget-Komponente für Gremlin + Chat
+const HelpChatGremlin: React.FC = () => {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <>
+      <div
+        style={{
+          position: "fixed",
+          bottom: "2rem",
+          right: open ? "22rem" : "2rem",
+          zIndex: 1000,
+          cursor: "pointer",
+          transition: "transform 0.2s, right 0.3s",
+        }}
+        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+        onClick={() => setOpen((v) => !v)}
+        title="Hilfe öffnen"
+      >
+        <Gremlin type="sleep" size="large" />
+      </div>
+      {open && <HelpChat onClose={() => setOpen(false)} />}
+    </>
+  );
+};
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -125,7 +153,7 @@ const Home: React.FC = () => {
               marginBottom: "2rem",
             }}
           >
-            Dein digitaler Begleiter für Events und Veranstaltungen.
+            Dein digitaler Event begleiter
             <br />
             Plane, organisiere und zeige Tagespläne Live übersichtlich an.
           </p>
@@ -443,37 +471,8 @@ const Home: React.FC = () => {
           </div>
         </div>
 
-        {/* Schlafender Gremlin für zukünftige Hilfe-Funktion */}
-        <div
-          style={{
-            position: "fixed",
-            bottom: "2rem",
-            right: "2rem",
-            zIndex: 1000,
-            cursor: "pointer",
-            transition: "transform 0.2s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "scale(1.1)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "scale(1)";
-          }}
-          onClick={() => {
-            /* Hilfe kommt später */
-          }}
-          title="Hilfe (coming soon)"
-        >
-          <img
-            src={sleepGremlin}
-            alt="Hilfe Gremlin"
-            style={{
-              width: "120px",
-              height: "120px",
-              objectFit: "contain",
-            }}
-          />
-        </div>
+        {/* Schlafender Gremlin für Hilfe-Chat */}
+        <HelpChatGremlin />
 
         {/* Email Modal */}
         {showEmailModal && (

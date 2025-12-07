@@ -1,9 +1,11 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import styles from './Planer.module.css';
 import Clock from './Clock';
 import { appConfig } from "../../constants";
-import { PenLine } from 'lucide-react';
+import Footer from '../ui/Footer';
+import Gremlin from '../ui/Gremlin';
+import HelpChat from '../ui/HelpChat';
 import type { ScheduleItem } from '../../types/schedule';
 import ScheduleCard from './ScheduleCard';
 import { useClock } from '../../hooks/useClock';
@@ -36,6 +38,9 @@ const Planer: React.FC<PlanerProps> = ({
 
   // Refs for auto-centering (article elements)
   const cardRefs = useRef<HTMLElement[]>([]);
+
+  // Help Chat State
+  const [showHelp, setShowHelp] = useState(false);
 
 
   useAutoCenter(autoCenter, schedule, currentTime, cardRefs);
@@ -79,6 +84,38 @@ const Planer: React.FC<PlanerProps> = ({
           <strong>DEBUG MODUS</strong> – Abdunkeln deaktiviert, Interaktionen aktiv
         </div>
       )}
+
+      {/* Schlafender Gremlin unten rechts */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: '2.5rem',
+          right: '2.5rem',
+          zIndex: 1000,
+          cursor: 'pointer',
+          pointerEvents: 'auto',
+        }}
+        aria-label="Help Chat öffnen"
+        onClick={() => setShowHelp(true)}
+      >
+        <Gremlin type="sleep" size="large" />
+      </div>
+
+      {/* Help Chat Overlay */}
+      {showHelp && <HelpChat />}
+      {showHelp && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            zIndex: 10001,
+          }}
+          onClick={() => setShowHelp(false)}
+        />
+      )}
       <header className={styles.header}>
         <div>
           <h1 className={styles.title}>{title}</h1>
@@ -114,10 +151,6 @@ const Planer: React.FC<PlanerProps> = ({
           );
         })}
       </section>
-      <footer className={styles.footer}>
-        <span className={styles.footerIcon} aria-hidden="true"><PenLine size={20} /></span>
-        <span>Handgezeichneter Jugendgruppen Flipchart</span>
-      </footer>
     </div>
   );
 };

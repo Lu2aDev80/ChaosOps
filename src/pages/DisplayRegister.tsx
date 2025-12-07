@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Monitor, Hash, RefreshCw, CheckCircle, Building2 } from 'lucide-react';
+import FooterAdmin from '../components/ui/FooterAdmin';
 import FlipchartBackground from '../components/layout/FlipchartBackground';
 import { api } from '../lib/api';
 import styles from './Admin.module.css';
@@ -537,12 +538,7 @@ const DisplayRegister: React.FC = () => {
         </div>
       </main>
       
-      <footer className={styles.footer}>
-        <span className={styles.footerIcon} aria-hidden="true">
-          <Monitor size={16} />
-        </span>
-        <span>Display-Registrierung – KonfiDayPlaner</span>
-      </footer>
+      <FooterAdmin icon="monitor" text="Display-Registrierung – KonfiDayPlaner" />
     </div>
   );
 };
