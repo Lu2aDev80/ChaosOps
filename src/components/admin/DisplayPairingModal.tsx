@@ -92,7 +92,7 @@ const DisplayPairingModal: React.FC<DisplayPairingModalProps> = ({
     setError('');
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const apiUrl = import.meta.env.VITE_API_URL || '/minihackathon/api';
       const response = await fetch(`${apiUrl}/displays/pairing/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

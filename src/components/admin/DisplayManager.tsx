@@ -62,7 +62,7 @@ const DisplayManager: React.FC<DisplayManagerProps> = ({ organisationId }) => {
   const loadEvents = useCallback(async () => {
     setLoadingEvents(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const apiUrl = import.meta.env.VITE_API_URL || '/minihackathon/api';
       const response = await fetch(`${apiUrl}/organisations/${organisationId}/events`, {
         credentials: 'include'
       });
@@ -108,7 +108,7 @@ const DisplayManager: React.FC<DisplayManagerProps> = ({ organisationId }) => {
     }
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const apiUrl = import.meta.env.VITE_API_URL || '/minihackathon/api';
       const response = await fetch(`${apiUrl}/displays/${displayId}`, {
         method: 'DELETE',
         credentials: 'include'
@@ -147,7 +147,7 @@ const DisplayManager: React.FC<DisplayManagerProps> = ({ organisationId }) => {
     setError(null);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const apiUrl = import.meta.env.VITE_API_URL || '/minihackathon/api';
       const response = await fetch(`${apiUrl}/displays/pairing/${displayId}/dayplan`, {
         method: 'PUT',
         headers: {
