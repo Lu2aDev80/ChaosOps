@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import type { DayPlan } from '../types/schedule';
+import Planer from '../components/planner/Planer';
 
 interface StatusResponse {
   status: string;
@@ -721,167 +722,22 @@ const DevicePairingDisplay = () => {
             </div>
           )}
 
-          {/* Running View - Event is currently running */}
+          {/* Running View - Event is currently running - Show Planer Component */}
           {eventStatus.status === 'running' && (
-      <div style={{
-        background: '#fff',
-        borderRadius: '1.2rem 1.35rem 1.15rem 1.25rem',
-        boxShadow: '2px 4px 0 #e5e7eb, 0 2px 8px 0 rgba(0,0,0,0.08)',
-        padding: '3rem 2.5rem',
-        border: '2px solid #181818',
-        maxWidth: '900px',
-        width: '100%',
-        position: 'relative',
-        transform: 'rotate(-0.3deg)',
-        zIndex: 1
-      }}>
-        {/* Tape */}
-        <div style={{
-          position: 'absolute',
-          top: '-12px',
-          left: '50%',
-          width: '45px',
-          height: '16px',
-          background: 'repeating-linear-gradient(135deg, #fffbe7 0 6px, #10b981 6px 12px)',
-          borderRadius: '6px',
-          border: '1.5px solid #059669',
-          boxShadow: '0 1px 4px rgba(5, 150, 105, 0.3)',
-          transform: 'translateX(-50%) rotate(-4deg)',
-          zIndex: 2
-        }} />
-
-        <h1 style={{
-          fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
-          fontSize: 'clamp(1.8rem, 4vw, 2.5rem)',
-          fontWeight: '800',
-          color: '#181818',
-          marginBottom: '0.5rem',
-          textAlign: 'center'
-        }}>
-          {assignedDayPlan.name}
-        </h1>
-
-        {/* Running Status Badge */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          marginBottom: '1rem'
-        }}>
-          <div style={{
-            backgroundColor: '#d1fae5',
-            border: '2px solid #10b981',
-            borderRadius: '20px',
-            padding: '0.5rem 1.5rem',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}>
-            <div style={{
-              width: '10px',
-              height: '10px',
-              backgroundColor: '#10b981',
-              borderRadius: '50%',
-              animation: 'pulse 2s infinite'
-            }} />
-            <span style={{
-              fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-              fontSize: '0.9rem',
-              fontWeight: '700',
-              color: '#065f46'
-            }}>
-              LIVE
-            </span>
-          </div>
-        </div>
-
-        <style>{`
-          @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-          }
-        `}</style>
-
-        <p style={{
-          fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-          fontSize: 'clamp(1rem, 2vw, 1.2rem)',
-          color: '#64748b',
-          textAlign: 'center',
-          marginBottom: '2rem'
-        }}>
-          {new Date(assignedDayPlan.date).toLocaleDateString('de-DE', {
-            weekday: 'long',
-            day: '2-digit',
-            month: 'long',
-            year: 'numeric'
-          })}
-        </p>
-
-        {/* Schedule Items */}
-        {assignedDayPlan.scheduleItems && assignedDayPlan.scheduleItems.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {assignedDayPlan.scheduleItems.map((item: any, index: number) => (
-              <div
-                key={item.id || index}
-                style={{
-                  backgroundColor: '#f8fafc',
-                  border: '2px solid #cbd5e1',
-                  borderRadius: '10px',
-                  padding: '1.25rem 1.5rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1.5rem'
-                }}
-              >
-                <div style={{
-                  backgroundColor: '#8b5cf6',
-                  color: 'white',
-                  borderRadius: '8px',
-                  padding: '0.75rem 1rem',
-                  fontFamily: 'monospace',
-                  fontSize: '1.1rem',
-                  fontWeight: '700',
-                  minWidth: '120px',
-                  textAlign: 'center',
-                  border: '2px solid #181818',
-                  boxShadow: '2px 2px 0 #181818'
-                }}>
-                  {item.startTime}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{
-                    fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                    fontSize: '1.2rem',
-                    fontWeight: '600',
-                    color: '#0f172a',
-                    marginBottom: '0.25rem'
-                  }}>
-                    {item.title}
-                  </div>
-                  {item.description && (
-                    <div style={{
-                      fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                      fontSize: '0.95rem',
-                      color: '#64748b'
-                    }}>
-                      {item.description}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p style={{
-            fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-            fontSize: '1.1rem',
-            color: '#94a3b8',
-            textAlign: 'center',
-            padding: '2rem'
-          }}>
-            Keine Programmpunkte vorhanden
-          </p>
-        )}
-      </div>
+            <Planer
+              schedule={assignedDayPlan.scheduleItems || []}
+              date={new Date(assignedDayPlan.date).toLocaleDateString('de-DE', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+              })}
+              title={assignedDayPlan.name}
+              debug={false}
+              showClock={true}
+              autoCenter={true}
+              displayInfo={deviceId}
+            />
           )}
         </>
       )}
