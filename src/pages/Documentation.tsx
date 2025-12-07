@@ -1,8 +1,6 @@
 import React from 'react';
-import Footer from '../components/ui/Footer';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Home, 
   Calendar, 
   Monitor, 
   Users, 

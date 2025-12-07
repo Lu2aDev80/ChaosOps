@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogIn, Building2, ArrowRight, Users } from "lucide-react";
+import { LogIn, Building2, Users } from "lucide-react";
 import FlipchartBackground from "../components/layout/FlipchartBackground";
 import { ConfirmModal, AlertModal, Modal } from "../components/ui";
 import styles from "./Admin.module.css";
@@ -529,7 +529,6 @@ const AdminLogin: React.FC = () => {
             >
               <LogIn size={20} />
               Weiter zum Login
-              <ArrowRight size={20} />
             </button>
 
             <div style={{ marginTop: "1rem", textAlign: "center" }}>

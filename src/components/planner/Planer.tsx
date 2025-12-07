@@ -3,7 +3,6 @@ import React, { useRef, useState } from 'react';
 import styles from './Planer.module.css';
 import Clock from './Clock';
 import { appConfig } from "../../constants";
-import Footer from '../ui/Footer';
 import Gremlin from '../ui/Gremlin';
 import HelpChat from '../ui/HelpChat';
 import type { ScheduleItem } from '../../types/schedule';

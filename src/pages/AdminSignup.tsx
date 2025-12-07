@@ -37,10 +37,6 @@ const AdminSignup: React.FC = () => {
     setModalState({ ...modal, isOpen: true });
   };
 
-  // Hilfsfunktion: Modal garantiert schließen
-  const closeModal = () => {
-    setModalState({ isOpen: false, title: '', message: '', type: 'info' });
-  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import { LogIn, Monitor, Calendar, BookOpen, Mail, X } from "lucide-react";
+import { LogIn, Monitor, Calendar, BookOpen } from "lucide-react";
 import FlipchartBackground from "../components/layout/FlipchartBackground";
 import styles from "./Admin.module.css";
 import chaosOpsLogo from "../assets/Chaos-Ops Logo.png";
@@ -36,53 +36,7 @@ const HelpChatGremlin: React.FC = () => {
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
-  const [showEmailModal, setShowEmailModal] = useState(false);
-  const [emailForm, setEmailForm] = useState({ to: "", name: "" });
-  const [sending, setSending] = useState(false);
-  const [emailResult, setEmailResult] = useState<{
-    success?: boolean;
-    message?: string;
-  } | null>(null);
 
-  const handleSendTestEmail = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!emailForm.to) return;
-
-    setSending(true);
-    setEmailResult(null);
-
-    try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-      const res = await fetch(`${apiBaseUrl}/api/email/test`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ to: emailForm.to, name: emailForm.name }),
-      });
-
-      if (res.ok) {
-        setEmailResult({
-          success: true,
-          message: "Test-E-Mail erfolgreich versendet! 🎉",
-        });
-        setTimeout(() => {
-          setShowEmailModal(false);
-          setEmailForm({ to: "", name: "" });
-          setEmailResult(null);
-        }, 2000);
-      } else {
-        const err = await res.json().catch(() => ({}));
-        setEmailResult({
-          success: false,
-          message: err.error || "Fehler beim Versenden",
-        });
-      }
-    } catch (err) {
-      setEmailResult({ success: false, message: "Verbindungsfehler" });
-    } finally {
-      setSending(false);
-    }
-  };
 
   return (
     <div
@@ -144,19 +98,34 @@ const Home: React.FC = () => {
             />
           </div>
 
-          <p
+          {/* Werbetext/Testimonial */}
+          <div
             style={{
+              background: '#fff',
+              border: '1px solid #e5e7eb',
+              borderRadius: '0.7rem',
+              padding: '0.85rem 1.1rem',
+              margin: '0 auto 1.2rem auto',
+              maxWidth: 400,
+              boxShadow: '0 1px 8px #e5e7eb33',
               fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-              fontSize: "clamp(1rem, 2.5vw, 1.2rem)",
-              color: "#4a5568",
-              lineHeight: "1.6",
-              marginBottom: "2rem",
+              fontSize: '1rem',
+              color: '#18181b',
+              textAlign: 'center',
+              lineHeight: 1.5,
+              letterSpacing: '0.01em',
             }}
           >
-            Dein digitaler Event begleiter
-            <br />
-            Plane, organisiere und zeige Tagespläne Live übersichtlich an.
-          </p>
+            <div style={{ fontWeight: 700, fontSize: '1.09rem', marginBottom: 2, color: '#fbbf24', letterSpacing: '0.01em' }}>
+              Chaos Ops – Dein Event, perfekt organisiert
+            </div>
+            <div style={{ color: '#18181b', fontWeight: 400, fontSize: '0.97rem' }}>
+              Live-Tagespläne im Blick, flexibel anpassbar, übersichtlich für Teams.<br />
+              <span style={{ color: '#fbbf24', fontSize: '0.93rem', fontWeight: 500 }}>
+                Der digitale Begleiter für stressfreie Events.
+              </span>
+            </div>
+          </div>
 
         {/* Action Buttons */}
         <div
@@ -267,38 +236,7 @@ const Home: React.FC = () => {
             Dokumentation
           </button>
 
-          <button
-            onClick={() => setShowEmailModal(true)}
-            style={{
-              padding: "clamp(0.875rem, 2.5vw, 1rem) clamp(1.5rem, 4vw, 2rem)",
-              border: "2px solid #181818",
-              borderRadius: "8px",
-              fontSize: "clamp(1rem, 2.5vw, 1.1rem)",
-              fontWeight: "700",
-              fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-              backgroundColor: "#ec4899",
-              color: "#fff",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.75rem",
-              transition: "all 0.2s ease",
-              boxShadow: "2px 4px 0 #181818",
-              textShadow: "0 1px 2px rgba(0,0,0,0.2)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translateY(-2px)";
-              e.currentTarget.style.boxShadow = "3px 6px 0 #181818";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = "2px 4px 0 #181818";
-            }}
-          >
-            <Mail size={20} />
-            Test E-Mail senden
-          </button>
+
 
           {/* Development Test Button */}
           <button
@@ -307,7 +245,7 @@ const Home: React.FC = () => {
               padding: "clamp(0.875rem, 2.5vw, 1rem) clamp(1.5rem, 4vw, 2rem)",
               border: "2px dashed #181818",
               borderRadius: "8px",
-              fontSize: "clamp(0.9rem, 2.25vw, 1rem)",
+              fontSize: "clamp(0.98rem, 2.25vw, 1.08rem)",
               fontWeight: "600",
               fontFamily: '"Inter", "Roboto", Arial, sans-serif',
               backgroundColor: "#10b981",
@@ -320,7 +258,7 @@ const Home: React.FC = () => {
               transition: "all 0.2s ease",
               boxShadow: "2px 4px 0 #181818",
               textShadow: "0 1px 2px rgba(0,0,0,0.2)",
-              opacity: "0.9",
+              opacity: "0.95",
               position: "relative",
             }}
             onMouseEnter={(e) => {
@@ -331,345 +269,40 @@ const Home: React.FC = () => {
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = "translateY(0)";
               e.currentTarget.style.boxShadow = "2px 4px 0 #181818";
-              e.currentTarget.style.opacity = "0.9";
+              e.currentTarget.style.opacity = "0.95";
             }}
-            title="Entwicklungs-Test-Button für Planer"
+            title="Demo-Modus ausprobieren"
           >
             <Calendar size={18} />
-            🧪 Planer testen (Dev)
+            Demo ausprobieren
             <span
               style={{
-                position: "absolute",
-                top: "clamp(-8px, -2vw, -6px)",
-                right: "clamp(-8px, -2vw, -6px)",
-                backgroundColor: "#ef4444",
-                color: "#fff",
-                fontSize: "clamp(0.65rem, 1.5vw, 0.7rem)",
-                padding: "2px 6px",
-                borderRadius: "4px",
-                border: "1px solid #181818",
-                fontWeight: "bold",
+                marginLeft: '0.7rem',
+                backgroundColor: '#fbbf24',
+                color: '#18181b',
+                fontSize: '0.78rem',
+                padding: '2px 10px',
+                borderRadius: '6px',
+                border: '1.5px solid #181818',
+                fontWeight: 700,
+                letterSpacing: '0.03em',
+                boxShadow: '0 1px 4px #fbbf2433',
+                lineHeight: 1.1,
+                alignSelf: 'center',
               }}
             >
-              DEV
+              Demo Planer
             </span>
           </button>
         </div>
         </div>
 
-        {/* Features Section */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 250px), 1fr))",
-            gap: "1.5rem",
-            width: "100%",
-            maxWidth: "900px",
-          }}
-        >
-          {/* Feature 1 */}
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: "1rem 1.2rem 1.1rem 1rem",
-              boxShadow: "2px 4px 0 #e5e7eb, 0 2px 8px 0 rgba(0,0,0,0.08)",
-              padding: "1.5rem",
-              border: "2px solid #181818",
-              position: "relative",
-              transform: "rotate(0.5deg)",
-            }}
-          >
-            <div
-              style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "12px",
-                backgroundColor: "#fef3c7",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: "1rem",
-                border: "2px solid #181818",
-              }}
-            >
-              <Calendar size={28} color="#f59e0b" strokeWidth={2.5} />
-            </div>
-            <h3
-              style={{
-                fontFamily:
-                  '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
-                fontSize: "1.3rem",
-                fontWeight: "700",
-                color: "#181818",
-                marginBottom: "0.5rem",
-              }}
-            >
-              Event-Planung
-            </h3>
-            <p
-              style={{
-                fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                fontSize: "0.95rem",
-                color: "#4a5568",
-                lineHeight: "1.5",
-              }}
-            >
-              Erstelle und verwalte Events mit detaillierten Tagesplänen.
-            </p>
-          </div>
 
-          {/* Feature 2 */}
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: "1.1rem 1rem 1.2rem 1.1rem",
-              boxShadow: "2px 4px 0 #e5e7eb, 0 2px 8px 0 rgba(0,0,0,0.08)",
-              padding: "1.5rem",
-              border: "2px solid #181818",
-              position: "relative",
-              transform: "rotate(-0.5deg)",
-            }}
-          >
-            <div
-              style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "12px",
-                backgroundColor: "#dbeafe",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: "1rem",
-                border: "2px solid #181818",
-              }}
-            >
-              <Monitor size={28} color="#0284c7" strokeWidth={2.5} />
-            </div>
-            <h3
-              style={{
-                fontFamily:
-                  '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
-                fontSize: "1.3rem",
-                fontWeight: "700",
-                color: "#181818",
-                marginBottom: "0.5rem",
-              }}
-            >
-              Display-Modus
-            </h3>
-            <p
-              style={{
-                fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                fontSize: "0.95rem",
-                color: "#4a5568",
-                lineHeight: "1.5",
-              }}
-            >
-              Registriere Geräte als Display und zeige Tagespläne in Echtzeit
-              an.
-            </p>
-          </div>
-        </div>
 
         {/* Schlafender Gremlin für Hilfe-Chat */}
         <HelpChatGremlin />
 
-        {/* Email Modal */}
-        {showEmailModal && (
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 2000,
-              padding: "1rem",
-            }}
-            onClick={() => setShowEmailModal(false)}
-          >
-            <div
-              style={{
-                background: "#fff",
-                borderRadius: "1.2rem 1.35rem 1.15rem 1.25rem",
-                boxShadow: "2px 4px 0 #e5e7eb, 0 2px 8px 0 rgba(0,0,0,0.08)",
-                padding: "2rem",
-                border: "2px solid #181818",
-                position: "relative",
-                maxWidth: "500px",
-                width: "100%",
-                transform: "rotate(-0.2deg)",
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() => setShowEmailModal(false)}
-                style={{
-                  position: "absolute",
-                  top: "1rem",
-                  right: "1rem",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "0.5rem",
-                  color: "#64748b",
-                }}
-              >
-                <X size={24} />
-              </button>
 
-              <h2
-                style={{
-                  fontFamily:
-                    '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
-                  fontSize: "1.8rem",
-                  fontWeight: "700",
-                  color: "#0f172a",
-                  marginBottom: "1.5rem",
-                  textAlign: "center",
-                }}
-              >
-                Test E-Mail senden 📧
-              </h2>
-
-              <form
-                onSubmit={handleSendTestEmail}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "1rem",
-                }}
-              >
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                      fontSize: "1rem",
-                      fontWeight: "600",
-                      color: "#0f172a",
-                      marginBottom: "0.5rem",
-                    }}
-                  >
-                    E-Mail-Adresse *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={emailForm.to}
-                    onChange={(e) =>
-                      setEmailForm({ ...emailForm, to: e.target.value })
-                    }
-                    placeholder="deine@email.de"
-                    style={{
-                      width: "100%",
-                      padding: "0.75rem",
-                      border: "2px solid #374151",
-                      borderRadius: "8px",
-                      fontSize: "1rem",
-                      fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                      boxSizing: "border-box",
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                      fontSize: "1rem",
-                      fontWeight: "600",
-                      color: "#0f172a",
-                      marginBottom: "0.5rem",
-                    }}
-                  >
-                    Dein Name (optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={emailForm.name}
-                    onChange={(e) =>
-                      setEmailForm({ ...emailForm, name: e.target.value })
-                    }
-                    placeholder="z.B. Max"
-                    style={{
-                      width: "100%",
-                      padding: "0.75rem",
-                      border: "2px solid #374151",
-                      borderRadius: "8px",
-                      fontSize: "1rem",
-                      fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                      boxSizing: "border-box",
-                    }}
-                  />
-                </div>
-
-                {emailResult && (
-                  <div
-                    style={{
-                      padding: "0.75rem",
-                      borderRadius: "8px",
-                      backgroundColor: emailResult.success
-                        ? "#d1fae5"
-                        : "#fee2e2",
-                      color: emailResult.success ? "#065f46" : "#991b1b",
-                      fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                      fontSize: "0.9rem",
-                      fontWeight: "600",
-                      textAlign: "center",
-                    }}
-                  >
-                    {emailResult.message}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={sending}
-                  style={{
-                    padding: "1rem 2rem",
-                    border: "2px solid #181818",
-                    borderRadius: "8px",
-                    fontSize: "1.1rem",
-                    fontWeight: "700",
-                    fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                    backgroundColor: sending ? "#9ca3af" : "#ec4899",
-                    color: "#fff",
-                    cursor: sending ? "not-allowed" : "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "0.75rem",
-                    transition: "all 0.2s ease",
-                    boxShadow: "2px 4px 0 #181818",
-                    textShadow: "0 1px 2px rgba(0,0,0,0.2)",
-                    width: "100%",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!sending) {
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                      e.currentTarget.style.boxShadow = "3px 6px 0 #181818";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!sending) {
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow = "2px 4px 0 #181818";
-                    }
-                  }}
-                >
-                  <Mail size={20} />
-                  {sending ? "Wird gesendet..." : "E-Mail senden"}
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
       </main>
     </div>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import Planer from '../components/planner/Planer';
 import type { ScheduleItem } from '../types/schedule';
 
@@ -71,6 +71,7 @@ const sampleSchedule: ScheduleItem[] = [
 
 const PlannerPage: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [scheduleData, setScheduleData] = React.useState({
     schedule: sampleSchedule,
     title: 'Heutiger Ablauf',
@@ -131,13 +132,36 @@ const PlannerPage: React.FC = () => {
   }, [dayPlanId]);
 
   return (
-    <Planer 
-      schedule={scheduleData.schedule} 
+    <Planer
+      schedule={scheduleData.schedule}
       title={scheduleData.title}
       date={scheduleData.date}
-      showClock={true} 
+      showClock={true}
       autoCenter={true}
       debug={false}
+      resetButton={
+        <button
+          onClick={() => navigate(-1)}
+          style={{
+            background: '#f1f5f9',
+            border: '2px solid #181818',
+            borderRadius: '8px',
+            fontWeight: 600,
+            fontSize: '1rem',
+            padding: '0.5rem 1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            boxShadow: '2px 4px 0 #181818',
+            cursor: 'pointer',
+            pointerEvents: 'auto',
+            zIndex: 30
+          }}
+        >
+          <span style={{fontSize: '1.2em', lineHeight: 1}}>&larr;</span>
+          Zurück
+        </button>
+      }
     />
   );
 };

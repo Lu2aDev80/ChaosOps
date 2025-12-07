@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import FlipchartBackground from '../components/layout/FlipchartBackground';
 import { ConfirmModal } from '../components/ui';
-import TagManager from '../components/admin/TagManager';
 import DisplayManager from '../components/admin/DisplayManager';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
@@ -53,7 +52,6 @@ const OrganisationSettings: React.FC = () => {
   const [orgDescription, setOrgDescription] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string>('');
 
   // Invite user form
   const [showInviteForm, setShowInviteForm] = useState(false);
@@ -86,15 +84,6 @@ const OrganisationSettings: React.FC = () => {
       const rawLogo = orgData.logoUrl ?? '';
       setLogoUrl(rawLogo);
       // Build preview URL
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/minihackathon';
-      const fullLogoUrl = !rawLogo
-        ? ''
-        : rawLogo.startsWith('http')
-          ? rawLogo
-          : rawLogo.startsWith('/uploads')
-            ? rawLogo
-            : `${API_BASE_URL}${rawLogo}`;
-      setLogoPreview(fullLogoUrl);
       setUsers(usersData.map(u => ({
         ...u,
         email: u.email || '',
@@ -206,33 +195,6 @@ const OrganisationSettings: React.FC = () => {
     }
   }, [orgId, loadData]);
 
-  const handleLogoFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type
-      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
-      if (!validTypes.includes(file.type)) {
-        setError('Please select a valid image file (JPEG, PNG, GIF, WebP, or SVG)');
-        return;
-      }
-      
-      // Validate file size (5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('File size must be less than 5MB');
-        return;
-      }
-      
-      setLogoFile(file);
-      
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setLogoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-      setError(null);
-    }
-  }, []);
 
   const cardStyle = {
     background: '#fff',
@@ -419,60 +381,38 @@ const OrganisationSettings: React.FC = () => {
               <label style={labelStyle}>
                 <ImageIcon size={18} style={{ display: 'inline', marginRight: '0.5rem' }} />
                 Organisation Logo
+                <span style={{
+                  marginLeft: '1rem',
+                  color: '#f59e42',
+                  fontWeight: 600,
+                  fontSize: '0.95rem',
+                  fontFamily: 'Inter, Roboto, Arial, sans-serif',
+                  background: '#fffbe6',
+                  borderRadius: '6px',
+                  padding: '0.2rem 0.7rem',
+                  border: '1px solid #fbbf24',
+                }}>
+                  Coming soon
+                </span>
               </label>
               
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleLogoFileChange}
-                style={{
-                  ...inputStyle,
-                  padding: '0.5rem',
-                  cursor: 'pointer',
-                }}
-              />
-              
-              {logoPreview && (
-                <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-                  {logoPreview ? (
-                    <img
-                      src={logoPreview}
-                      alt="Organisation Logo Preview"
-                      onError={() => setLogoPreview('')}
-                      style={{
-                        maxWidth: '300px',
-                        maxHeight: '150px',
-                        border: '2px solid #cbd5e1',
-                        borderRadius: '8px',
-                        objectFit: 'contain',
-                      }}
-                    />
-                  ) : (
-                    <div style={{
-                      width: '300px',
-                      height: '150px',
-                      border: '2px dashed #cbd5e1',
-                      borderRadius: '8px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#94a3b8',
-                      fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                      fontSize: '0.9rem',
-                      margin: '0 auto'
-                    }}>
-                      Kein Logo vorhanden
-                    </div>
-                  )}
-                  <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.5rem' }}>
-                    {logoFile ? 'New logo selected' : 'Current logo'}
-                  </p>
-                </div>
-              )}
-              
-              <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.5rem' }}>
-                Upload an image file (JPEG, PNG, GIF, WebP, or SVG). Max size: 5MB
-              </p>
+              {/* Logo upload und Vorschau deaktiviert */}
+              <div style={{
+                marginTop: '1rem',
+                textAlign: 'center',
+                color: '#94a3b8',
+                fontFamily: 'Inter, Roboto, Arial, sans-serif',
+                fontSize: '0.95rem',
+                background: '#f3f4f6',
+                borderRadius: '8px',
+                padding: '1.2rem',
+                border: '2px dashed #cbd5e1',
+                maxWidth: '350px',
+                marginLeft: 'auto',
+                marginRight: 'auto',
+              }}>
+                Logo Upload ist aktuell deaktiviert.
+              </div>
             </div>
 
             <button
@@ -813,27 +753,37 @@ const OrganisationSettings: React.FC = () => {
         </div>
         )}
 
+
         {/* Tag Management - Event Tags */}
         {isAdmin && orgId && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
-            <TagManager
-              orgId={orgId}
-              type="event"
-              title="Veranstaltungs-Tags"
-              description="Erstelle Tags um Veranstaltungen zu kategorisieren und zu filtern."
-            />
-          </div>
-        )}
-
-        {/* Tag Management - Schedule Item Tags */}
-        {isAdmin && orgId && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
-            <TagManager
-              orgId={orgId}
-              type="scheduleItem"
-              title="Termin-Tags"
-              description="Erstelle Tags um Termine in Tagesplänen zu kategorisieren und zu filtern."
-            />
+          <div style={{ ...cardStyle, marginBottom: '2rem', marginTop: '2rem' }}>
+            <h2
+              style={{
+                fontFamily: '"Gloria Hallelujah", "Caveat", cursive',
+                fontSize: '1.5rem',
+                fontWeight: '700',
+                color: '#0f172a',
+                marginBottom: '1.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+              }}
+            >
+              Tags für Veranstaltungen
+              <span style={{
+                marginLeft: '1rem',
+                color: '#f59e42',
+                fontWeight: 600,
+                fontSize: '0.95rem',
+                fontFamily: 'Inter, Roboto, Arial, sans-serif',
+                background: '#fffbe6',
+                borderRadius: '6px',
+                padding: '0.2rem 0.7rem',
+                border: '1px solid #fbbf24',
+              }}>
+                Coming soon
+              </span>
+            </h2>
           </div>
         )}
 
