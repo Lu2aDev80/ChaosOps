@@ -34,7 +34,6 @@ services:
     env_file:
       - .env.production
     environment:
-      APP_BASE_PATH: /minihackathon
       DATABASE_URL: postgresql://${POSTGRES_USER:-konfiadmin}:${POSTGRES_PASSWORD:-konfi2024secure}@postgres:5432/${POSTGRES_DB:-konfidayplaner}?schema=public
       PORT: 3000
     ports:
@@ -43,7 +42,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/minihackathon/api/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
