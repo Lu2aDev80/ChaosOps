@@ -49,8 +49,13 @@ export function setupSocketIO(httpServer: HTTPServer) {
         "https://www.lu2adevelopment.de"
       ].filter(Boolean),
       credentials: true
-    }
+    },
+    // Important: Configure Socket.IO path to match the base path used in frontend
+    // In production with /minihackathon base: socket.io is at /minihackathon/socket.io/
+    path: process.env.APP_BASE_PATH ? `${process.env.APP_BASE_PATH}/socket.io/` : '/socket.io/'
   });
+
+  logger.info(`Socket.IO configured with path: ${process.env.APP_BASE_PATH ? `${process.env.APP_BASE_PATH}/socket.io/` : '/socket.io/'}`);
 
   io.on('connection', async (socket: Socket) => {
     logger.info(`Socket connected: ${socket.id}`);

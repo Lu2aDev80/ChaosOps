@@ -95,17 +95,23 @@ const DevicePairingDisplay = () => {
 
 
   useEffect(() => {
-    // Connect to Socket.IO server using same origin (important for production)
-    // In dev: will connect to http://localhost:3000
-    // In prod: will connect to https://lu2adevelopment.de
-    const socket = io({
+    // Connect to Socket.IO server
+    // In dev: uses relative path /minihackathon/socket.io/ (proxied by Vite to localhost:3000)
+    // In prod: uses relative path /minihackathon/socket.io/ (served by production server)
+    const socketOptions = {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       reconnectionAttempts: 5,
       path: '/minihackathon/socket.io/'
-    });
+    };
+    
+    if (import.meta.env.DEV) {
+      console.log('Connecting to Socket.IO with options:', socketOptions);
+    }
+    
+    const socket = io(socketOptions);
 
     socketRef.current = socket;
 

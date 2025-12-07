@@ -22,6 +22,14 @@ export default defineConfig({
         // Don't rewrite the path - keep the /minihackathon prefix
         rewrite: undefined,
       },
+      "/minihackathon/socket.io": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+        // Don't rewrite the path - keep the /minihackathon prefix
+        rewrite: undefined,
+      },
     },
   },
 });
