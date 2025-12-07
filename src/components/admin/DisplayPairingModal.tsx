@@ -37,7 +37,7 @@ const DisplayPairingModal: React.FC<DisplayPairingModalProps> = ({
   const loadEvents = async () => {
     setLoadingEvents(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const apiUrl = import.meta.env.VITE_API_URL || '/minihackathon/api';
       const response = await fetch(`${apiUrl}/organisations/${orgId}/events`, {
         credentials: 'include',
       });
@@ -59,7 +59,7 @@ const DisplayPairingModal: React.FC<DisplayPairingModalProps> = ({
     }
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const apiUrl = import.meta.env.VITE_API_URL || '/minihackathon/api';
       const response = await fetch(
         `${apiUrl}/displays/pairing/${pairedDeviceId}/dayplan`,
         {

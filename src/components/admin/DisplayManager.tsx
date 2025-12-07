@@ -34,7 +34,7 @@ const DisplayManager: React.FC<DisplayManagerProps> = ({ organisationId }) => {
     setLoading(true);
     setError(null);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const apiUrl = import.meta.env.VITE_API_URL || '/minihackathon/api';
       const response = await fetch(`${apiUrl}/organisations/${organisationId}/displays`, {
         credentials: 'include'
       });
