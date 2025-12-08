@@ -553,6 +553,13 @@ const AdminSignup: React.FC = () => {
                 Mindestens 6 Zeichen für die Sicherheit
               </small>
             </div>
+            <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <label style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                <input type="checkbox" checked={acceptedTerms} onChange={e => setAcceptedTerms(e.target.checked)} />
+                <span style={{ fontFamily: 'Inter, Roboto, sans-serif' }}>Ich akzeptiere die <a href="/agb" target="_blank" rel="noopener noreferrer">AGB</a> und die <a href="/dsgvo" target="_blank" rel="noopener noreferrer">Datenschutzerklärung</a>.</span>
+              </label>
+            </div>
+
             <button
               disabled={submitting}
               type="submit"
