@@ -18,31 +18,8 @@ const DayPlanForm: React.FC<DayPlanFormProps> = ({
   onSave,
   onCancel
 }) => {
-  const [step, setStep] = useState<'basic' | 'schedule'>('basic');
   const [name, setName] = useState(dayPlan?.name || '');
   const [date, setDate] = useState(dayPlan?.date || new Date().toISOString().split('T')[0]);
-  const [schedule] = useState<ScheduleItem[]>(dayPlan?.scheduleItems || []);
-
-  const handleBasicSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (name.trim() && date) {
-      setStep('schedule');
-    }
-  };
-
-  const handleScheduleSave = (savedSchedule: ScheduleItem[]) => {
-    onSave({
-      eventId: event.id,
-      name: name.trim(),
-      date,
-      scheduleItems: savedSchedule
-    });
-  };
-
-  const handleScheduleCancel = () => {
-    setStep('basic');
-  };
-
   const isBasicValid = name.trim().length > 0 && date;
 
   return (
@@ -51,224 +28,206 @@ const DayPlanForm: React.FC<DayPlanFormProps> = ({
       maxWidth: '800px',
       margin: '0 1rem'
     }}>
-      {step === 'basic' ? (
-        // Step 1: Basic Information
-        <div className={styles.adminCard} style={{ width: '100%' }}>
-          <div className={styles.tape} aria-hidden="true"></div>
-          
-          <h2 className={styles.cardTitle}>
-            <Calendar size={20} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
-            {dayPlan ? 'Tagesplan bearbeiten' : 'Neuer Tagesplan'}
-          </h2>
-
-          <form onSubmit={handleBasicSubmit} className={styles.cardContent}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              
-              {/* Event Info */}
+      <div className={styles.adminCard} style={{ width: '100%' }}>
+        <div className={styles.tape} aria-hidden="true"></div>
+        <h2 className={styles.cardTitle}>
+          <Calendar size={20} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
+          {dayPlan ? 'Tagesplan bearbeiten' : 'Neuer Tagesplan'}
+        </h2>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (isBasicValid) {
+              onSave({
+                eventId: event.id,
+                name: name.trim(),
+                date,
+                scheduleItems: dayPlan?.scheduleItems || []
+              });
+            }
+          }}
+          className={styles.cardContent}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {/* Event Info */}
+            <div style={{
+              padding: '1rem',
+              backgroundColor: '#f0f9ff',
+              border: '2px solid #0ea5e9',
+              borderRadius: '8px',
+              fontFamily: '"Inter", "Roboto", Arial, sans-serif'
+            }}>
               <div style={{
-                padding: '1rem',
-                backgroundColor: '#f0f9ff',
-                border: '2px solid #0ea5e9',
-                borderRadius: '8px',
-                fontFamily: '"Inter", "Roboto", Arial, sans-serif'
+                fontSize: '0.75rem',
+                fontWeight: '600',
+                color: '#0369a1',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                marginBottom: '0.5rem'
               }}>
-                <div style={{ 
-                  fontSize: '0.75rem', 
-                  fontWeight: '600', 
-                  color: '#0369a1',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  marginBottom: '0.5rem'
-                }}>
-                  Veranstaltung
-                </div>
-                <div style={{
-                  fontSize: '1.1rem',
-                  fontWeight: '600',
-                  color: '#0369a1',
-                  fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif'
-                }}>
-                  {event.name}
-                </div>
+                Veranstaltung
               </div>
-
-              {/* Name Field */}
-              <div>
-                <label htmlFor="dayPlanName" style={{ 
-                  display: 'block', 
-                  marginBottom: '0.5rem', 
-                  fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  color: '#181818'
-                }}>
-                  Name des Tagesplans *
-                </label>
-                <input
-                  type="text"
-                  id="dayPlanName"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  autoFocus
-                  placeholder="z.B. Tag 1 - Ankunft & Kennenlernen"
-                  style={{
-                    width: '100%',
-                    padding: '0.875rem',
-                    border: '2px solid #181818',
-                    borderRadius: '8px',
-                    fontSize: '1rem',
-                    fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                    backgroundColor: '#fff',
-                    boxSizing: 'border-box',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.boxShadow = '0 0 0 3px #fef3c7';
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                />
-              </div>
-
-              {/* Date Field */}
-              <div>
-                <label htmlFor="dayPlanDate" style={{ 
-                  display: 'block', 
-                  marginBottom: '0.5rem', 
-                  fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  color: '#181818'
-                }}>
-                  Datum *
-                </label>
-                <input
-                  type="date"
-                  id="dayPlanDate"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '0.875rem',
-                    border: '2px solid #181818',
-                    borderRadius: '8px',
-                    fontSize: '1rem',
-                    fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                    backgroundColor: '#fff',
-                    boxSizing: 'border-box',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.boxShadow = '0 0 0 3px #fef3c7';
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                />
-              </div>
-
-              {/* Info Box */}
               <div style={{
-                padding: '1rem',
-                backgroundColor: '#f3f4f6',
-                border: '2px solid #d1d5db',
-                borderRadius: '8px',
-                fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                fontSize: '0.9rem',
-                color: '#475569'
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                color: '#0369a1',
+                fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif'
               }}>
-                <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>💡 Nächster Schritt:</div>
-                <div>Nachdem du die Grunddaten eingegeben hast, kannst du die Termine für diesen Tag hinzufügen.</div>
-              </div>
-
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <button
-                  type="submit"
-                  disabled={!isBasicValid}
-                  style={{
-                    flex: '1',
-                    padding: '1rem',
-                    border: '2px solid #181818',
-                    borderRadius: '8px',
-                    fontSize: '1rem',
-                    fontWeight: '700',
-                    fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                    backgroundColor: isBasicValid ? '#10b981' : '#e5e7eb',
-                    color: isBasicValid ? '#fff' : '#888',
-                    cursor: isBasicValid ? 'pointer' : 'not-allowed',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.5rem',
-                    transition: 'all 0.2s ease',
-                    boxShadow: isBasicValid ? '2px 4px 0 #181818' : 'none'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (isBasicValid) {
-                      e.currentTarget.style.backgroundColor = '#059669';
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '3px 6px 0 #181818';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (isBasicValid) {
-                      e.currentTarget.style.backgroundColor = '#10b981';
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '2px 4px 0 #181818';
-                    }
-                  }}
-                >
-                  <ChevronRight size={20} />
-                  Termine hinzufügen
-                </button>
-
-                <button
-                  type="button"
-                  onClick={onCancel}
-                  style={{
-                    padding: '1rem 1.5rem',
-                    border: '2px solid #64748b',
-                    borderRadius: '8px',
-                    fontSize: '1rem',
-                    fontWeight: '600',
-                    fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                    backgroundColor: '#fff',
-                    color: '#64748b',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.5rem',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#f1f5f9';
-                    e.currentTarget.style.transform = 'translateY(-1px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = '#fff';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  <X size={20} />
-                  Abbrechen
-                </button>
+                {event.name}
               </div>
             </div>
-          </form>
-        </div>
-      ) : (
-        // Step 2: Schedule Management
-        <ScheduleManager
-          schedule={schedule}
-          onSave={handleScheduleSave}
-          onCancel={handleScheduleCancel}
-        />
-      )}
+            {/* Name Field */}
+            <div>
+              <label htmlFor="dayPlanName" style={{
+                display: 'block',
+                marginBottom: '0.5rem',
+                fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
+                fontSize: '1rem',
+                fontWeight: '600',
+                color: '#181818'
+              }}>
+                Name des Tagesplans *
+              </label>
+              <input
+                type="text"
+                id="dayPlanName"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                autoFocus
+                placeholder="z.B. Tag 1 - Ankunft & Kennenlernen"
+                style={{
+                  width: '100%',
+                  padding: '0.875rem',
+                  border: '2px solid #181818',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                  backgroundColor: '#fff',
+                  boxSizing: 'border-box',
+                  transition: 'all 0.2s ease'
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.boxShadow = '0 0 0 3px #fef3c7';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              />
+            </div>
+            {/* Date Field */}
+            <div>
+              <label htmlFor="dayPlanDate" style={{
+                display: 'block',
+                marginBottom: '0.5rem',
+                fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
+                fontSize: '1rem',
+                fontWeight: '600',
+                color: '#181818'
+              }}>
+                Datum *
+              </label>
+              <input
+                type="date"
+                id="dayPlanDate"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+                style={{
+                  width: '100%',
+                  padding: '0.875rem',
+                  border: '2px solid #181818',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                  backgroundColor: '#fff',
+                  boxSizing: 'border-box',
+                  transition: 'all 0.2s ease'
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.boxShadow = '0 0 0 3px #fef3c7';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              />
+            </div>
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                type="submit"
+                disabled={!isBasicValid}
+                style={{
+                  flex: '1',
+                  padding: '1rem',
+                  border: '2px solid #181818',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  fontWeight: '700',
+                  fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                  backgroundColor: isBasicValid ? '#10b981' : '#e5e7eb',
+                  color: isBasicValid ? '#fff' : '#888',
+                  cursor: isBasicValid ? 'pointer' : 'not-allowed',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  transition: 'all 0.2s ease',
+                  boxShadow: isBasicValid ? '2px 4px 0 #181818' : 'none'
+                }}
+                onMouseEnter={(e) => {
+                  if (isBasicValid) {
+                    e.currentTarget.style.backgroundColor = '#059669';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '3px 6px 0 #181818';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (isBasicValid) {
+                    e.currentTarget.style.backgroundColor = '#10b981';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '2px 4px 0 #181818';
+                  }
+                }}
+              >
+                <ChevronRight size={20} />
+                Speichern
+              </button>
+              <button
+                type="button"
+                onClick={onCancel}
+                style={{
+                  padding: '1rem 1.5rem',
+                  border: '2px solid #64748b',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                  backgroundColor: '#fff',
+                  color: '#64748b',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f1f5f9';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#fff';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <X size={20} />
+                Abbrechen
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
