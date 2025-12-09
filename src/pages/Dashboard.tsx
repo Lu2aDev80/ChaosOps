@@ -31,6 +31,7 @@ import type { ScheduleItem } from "../types/schedule";
 import styles from "./Admin.module.css";
 import chaosOpsLogo from "../assets/Chaos-Ops Logo.png";
 import { api } from "../lib/api";
+// ...removed import of 'trace' from console, use global console.trace instead
 
 const Dashboard: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -331,28 +332,46 @@ const Dashboard: React.FC = () => {
 
   // Filter events based on search query
   const filteredEvents = useMemo(() => {
-    if (!searchQuery.trim()) return events;
-    const query = searchQuery.toLowerCase();
-    return events.filter(event => 
-      event.name.toLowerCase().includes(query) ||
-      event.description?.toLowerCase().includes(query) ||
-      event.dayPlans.some(dp => 
-        dp.name.toLowerCase().includes(query) ||
-        new Date(dp.date).toLocaleDateString('de-DE').includes(query)
-      )
-    );
-  }, [events, searchQuery]);
+    let result = events;
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(event =>
+        event.name.toLowerCase().includes(query) ||
+        event.description?.toLowerCase().includes(query) ||
+        event.dayPlans.some(dp =>
+          dp.name.toLowerCase().includes(query) ||
+          new Date(dp.date).toLocaleDateString('de-DE').includes(query)
+        )
+      );
+    }
+    if (selectedEventTags.size > 0) {
+      result = result.filter(event =>
+        event.tags && event.tags.some((tag: any) => selectedEventTags.has(tag.id))
+      );
+    }
+    return result;
+  }, [events, searchQuery, selectedEventTags]);
 
   // Filter day plans for selected event
   const filteredDayPlans = useMemo(() => {
     if (!selectedEvent) return [];
-    if (!searchQuery.trim()) return selectedEvent.dayPlans;
-    const query = searchQuery.toLowerCase();
-    return selectedEvent.dayPlans.filter(dp =>
-      dp.name.toLowerCase().includes(query) ||
-      new Date(dp.date).toLocaleDateString('de-DE').includes(query)
-    );
-  }, [selectedEvent, searchQuery]);
+    let result = selectedEvent.dayPlans;
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(dp =>
+        dp.name.toLowerCase().includes(query) ||
+        new Date(dp.date).toLocaleDateString('de-DE').includes(query)
+      );
+    }
+    if (selectedScheduleItemTags.size > 0) {
+      result = result.filter(dp =>
+        dp.scheduleItems && dp.scheduleItems.some((item: any) =>
+          item.tags && item.tags.some((tag: any) => selectedScheduleItemTags.has(tag.id))
+        )
+      );
+    }
+    return result;
+  }, [selectedEvent, searchQuery, selectedScheduleItemTags]);
 
   // Toggle event collapse
   const toggleEventCollapse = (eventId: string) => {
@@ -724,26 +743,17 @@ const Dashboard: React.FC = () => {
                   right: searchQuery ? '3rem' : '1rem',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  background: (selectedEventTags.size > 0 || selectedScheduleItemTags.size > 0) ? '#a855f7' : '#f1f5f9',
-                  border: '2px solid #cbd5e1',
                   cursor: 'pointer',
-                  color: (selectedEventTags.size > 0 || selectedScheduleItemTags.size > 0) ? '#fff' : '#64748b',
                   padding: '0.5rem 0.75rem',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.375rem',
-                  borderRadius: '6px',
                   fontSize: '0.85rem',
                   fontFamily: '"Inter", "Roboto", Arial, sans-serif',
                   fontWeight: '600',
                   transition: 'all 0.2s ease',
-                  boxShadow: (selectedEventTags.size > 0 || selectedScheduleItemTags.size > 0) ? '0 2px 4px rgba(168, 85, 247, 0.3)' : 'none'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = (selectedEventTags.size > 0 || selectedScheduleItemTags.size > 0) ? '#9333ea' : '#e2e8f0';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = (selectedEventTags.size > 0 || selectedScheduleItemTags.size > 0) ? '#a855f7' : '#f1f5f9';
+                  border: 'none',
+                  backgroundColor: 'transparent',
                 }}
               >
                 <Filter size={14} />
@@ -842,7 +852,7 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Tag Filter Dropdown */}
-          {showTagFilter && (eventTags.length > 0 || scheduleItemTags.length > 0) && (
+          {showTagFilter && (
             <div style={{
               maxWidth: '1400px',
               margin: '0.75rem auto 0',
@@ -870,6 +880,18 @@ const Dashboard: React.FC = () => {
                   }
                 `}
               </style>
+
+              {(eventTags.length === 0 && scheduleItemTags.length === 0) && (
+                <div style={{
+                  textAlign: 'center',
+                  color: '#64748b',
+                  fontSize: '1rem',
+                  fontWeight: 500,
+                  padding: '2rem 0'
+                }}>
+                  Keine Tags zum Filtern vorhanden.
+                </div>
+              )}
 
               {eventTags.length > 0 && (
                 <div style={{ marginBottom: scheduleItemTags.length > 0 ? '1.5rem' : '0' }}>
