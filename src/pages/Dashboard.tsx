@@ -31,6 +31,7 @@ import type { ScheduleItem } from "../types/schedule";
 import styles from "./Admin.module.css";
 import chaosOpsLogo from "../assets/Chaos-Ops Logo.png";
 import { api } from "../lib/api";
+import LivePlanControl from "../components/planner/LivePlanControl";
 // ...removed import of 'trace' from console, use global console.trace instead
 
 const Dashboard: React.FC = () => {
@@ -61,6 +62,9 @@ const Dashboard: React.FC = () => {
 
   // Device pairing state
   const [showDevicePairingModal, setShowDevicePairingModal] = useState(false);
+  // Dummy: Display verbunden (später mit echter Logik ersetzen)
+  const [isDisplayConnected, setIsDisplayConnected] = useState(true);
+  const [delayActive, setDelayActive] = useState(false);
 
   // UI state for improved overview
   const [searchQuery, setSearchQuery] = useState('');
@@ -83,7 +87,7 @@ const Dashboard: React.FC = () => {
         const org = all.find((o: any) => o.id === orgId);
         setOrganisationName(org?.name ?? null);
         setOrganisationLogo(org?.logoUrl ?? null);
-      } catch {}
+      } catch { }
     };
     load();
   }, [orgId]);
@@ -101,7 +105,7 @@ const Dashboard: React.FC = () => {
           api.getEventTags(orgId),
           api.getScheduleItemTags(orgId)
         ]);
-        
+
         setEvents(
           serverEvents.map((e: any) => ({
             ...e,
@@ -120,7 +124,7 @@ const Dashboard: React.FC = () => {
             })),
           }))
         );
-        
+
         setEventTags(eventTagsData);
         setScheduleItemTags(scheduleItemTagsData);
       } catch (err) {
@@ -211,10 +215,10 @@ const Dashboard: React.FC = () => {
         facilitator: item.facilitator,
       })) || [];
 
-      const created = await api.createDayPlan(selectedEvent.id, { 
-        name: dayPlanData.name, 
-        date: dayPlanData.date, 
-        schedule: scheduleForApi 
+      const created = await api.createDayPlan(selectedEvent.id, {
+        name: dayPlanData.name,
+        date: dayPlanData.date,
+        schedule: scheduleForApi
       })
       const newDayPlan: DayPlan = {
         id: created.id,
@@ -268,18 +272,18 @@ const Dashboard: React.FC = () => {
       const updatedEvents = events.map((e) =>
         e.id === selectedEvent.id
           ? {
-              ...e,
-              dayPlans: e.dayPlans.map((d) =>
-                d.id === editingDayPlan.id
-                  ? { 
-                      ...d, 
-                      ...dayPlanData,
-                      updatedAt: new Date().toISOString() 
-                    }
-                  : d
-              ),
-              updatedAt: new Date().toISOString(),
-            }
+            ...e,
+            dayPlans: e.dayPlans.map((d) =>
+              d.id === editingDayPlan.id
+                ? {
+                  ...d,
+                  ...dayPlanData,
+                  updatedAt: new Date().toISOString()
+                }
+                : d
+            ),
+            updatedAt: new Date().toISOString(),
+          }
           : e
       );
       setEventsState(updatedEvents);
@@ -306,10 +310,10 @@ const Dashboard: React.FC = () => {
       const updatedEvents = events.map((e) =>
         e.id === selectedEvent.id
           ? {
-              ...e,
-              dayPlans: e.dayPlans.filter((d) => d.id !== dayPlanId),
-              updatedAt: new Date().toISOString(),
-            }
+            ...e,
+            dayPlans: e.dayPlans.filter((d) => d.id !== dayPlanId),
+            updatedAt: new Date().toISOString(),
+          }
           : e
       );
       setEventsState(updatedEvents);
@@ -326,7 +330,7 @@ const Dashboard: React.FC = () => {
   const handleLogout = async () => {
     try {
       await api.logout();
-    } catch {}
+    } catch { }
     navigate("/");
   };
 
@@ -401,14 +405,14 @@ const Dashboard: React.FC = () => {
     const updatedEvents = events.map((e) =>
       e.id === selectedEvent.id
         ? {
-            ...e,
-            dayPlans: e.dayPlans.map((d) =>
-              d.id === managingSchedule.id
-                ? { ...d, scheduleItems: schedule, updatedAt: new Date().toISOString() }
-                : d
-            ),
-            updatedAt: new Date().toISOString(),
-          }
+          ...e,
+          dayPlans: e.dayPlans.map((d) =>
+            d.id === managingSchedule.id
+              ? { ...d, scheduleItems: schedule, updatedAt: new Date().toISOString() }
+              : d
+          ),
+          updatedAt: new Date().toISOString(),
+        }
         : e
     );
     setEventsState(updatedEvents);
@@ -1039,6 +1043,20 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Content Grid */}
+
+        <LivePlanControl
+          isConnected={isDisplayConnected}
+          delayActive={delayActive}
+          onDelay={() => setDelayActive((prev) => !prev)}
+          onSendUpdate={() => window.alert("Änderungen wurden live gesendet!")}
+          displayName={"Demo-Display"}
+          planName={selectedEvent?.dayPlans?.[0]?.name || ""}
+          eventName={selectedEvent?.name || ""}
+        />
+
+        {/* Add spacing between live controls and Veranstaltungen */}
+        <div style={{ height: "2.5rem" }} />
+
         <div
           style={{
             display: "flex",
