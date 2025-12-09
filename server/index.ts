@@ -39,6 +39,7 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 const devOrigins = [
   process.env.DEV_ORIGIN || "http://localhost:5173",
   "http://localhost:5173",
+  "http://127.0.0.1:5173",
   "http://localhost:5174"
 ];
 
@@ -51,7 +52,7 @@ const productionOrigins = [
   "https://www.lu2adevelopment.de"
 ].filter(Boolean); // Remove any undefined values
 
-const allowedOrigins = [...devOrigins, ...productionOrigins];
+const allowedOrigins = [...devOrigins, ...productionOrigins].filter((origin): origin is string => typeof origin === 'string' && !!origin);
 
 app.use(cors({ 
   origin: process.env.NODE_ENV === 'production' 

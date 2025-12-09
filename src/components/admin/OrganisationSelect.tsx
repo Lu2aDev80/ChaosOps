@@ -96,7 +96,7 @@ const OrganisationSelect: React.FC<OrganisationSelectProps> = ({ isLogin = false
         boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
         border: '2px solid rgba(255,255,255,0.2)',
         minWidth: '200px',
-        zIndex: 1000
+        zIndex: 1000,
         display: 'none',
       }}>
         <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>🔧 Debug Status</div>
