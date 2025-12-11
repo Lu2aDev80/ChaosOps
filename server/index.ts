@@ -20,7 +20,7 @@ const app = express();
 const httpServer = http.createServer(app);
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 // Optional base path for running behind reverse proxies (z.B. /, Standard: leer)
-const BASE_PATH = (process.env.APP_BASE_PATH || '').trim();
+const BASE_PATH = '';
 const apiBase = `${BASE_PATH}/api`;
 
 app.use(express.json());

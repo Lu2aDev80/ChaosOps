@@ -17,8 +17,19 @@ RUN npm ci
 
 # Copy source code
 COPY server ./server
-COPY src/services ./src/services
-COPY tsconfig.server.json ./tsconfig.server.json
+COPY src ./src
+COPY index.html ./
+COPY vite.config.ts ./
+COPY tsconfig*.json ./
+COPY tailwind.config.js ./
+COPY postcss.config.js ./
+COPY public ./public
+
+# Set build-time environment variables for Vite
+ENV VITE_API_BASE_URL=/api
+
+# Build the application
+RUN npm run build
 
 # Create startup script with proper newlines
 RUN printf '#!/bin/sh\n\
