@@ -14,6 +14,21 @@ interface ScheduleCardProps {
 const ScheduleCard: React.FC<ScheduleCardProps> = ({ item, isPassed, debug, onRef, index = 0 }) => {
   const typeCls = styles['type_' + item.type];
   const edgeCls = index % 3 === 1 ? styles.edgeB : index % 3 === 2 ? styles.edgeC : '';
+  const addMinutesToTime = (timeStr?: string, minutesToAdd?: number) => {
+    if (!timeStr) return '00:00';
+    const parts = timeStr.split(':').map((p) => parseInt(p, 10));
+    if (parts.length < 2 || Number.isNaN(parts[0]) || Number.isNaN(parts[1])) return timeStr || '00:00';
+    const d = new Date();
+    d.setHours(parts[0], parts[1], 0, 0);
+    if (minutesToAdd && !Number.isNaN(minutesToAdd)) d.setMinutes(d.getMinutes() + minutesToAdd);
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
+  };
+
+  const delayMinutes = typeof item.delay === 'number' ? item.delay : 0;
+  const adjustedTime = delayMinutes !== 0 ? addMinutesToTime(item.time, delayMinutes) : item.time;
+
   return (
     <article
       className={`${styles.card} ${typeCls} ${edgeCls} ${isPassed && !debug ? styles.past : ''}`}
@@ -24,10 +39,11 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ item, isPassed, debug, onRe
       
       <div className={styles.cardTime} aria-label={`Zeit: ${item.time}`}>
         <span className={styles.icon} aria-hidden="true"><Hourglass size={18} /></span>
-        {item.timeChanged ? (
+        {delayMinutes !== 0 || item.timeChanged ? (
           <div className={styles.timeChangeWrapper}>
-            <span className={styles.newTime}>{item.time}</span>
-            <span className={styles.oldTime}>{item.originalTime}</span>
+            <span className={styles.newTime}>{adjustedTime}</span>
+            <span className={styles.oldTime}>{item.originalTime || item.time}</span>
+            <span style={{ marginLeft: 8, fontSize: '0.8rem', color: '#92400e', fontWeight: 700 }}>[{delayMinutes > 0 ? '+' : ''}{delayMinutes}m]</span>
           </div>
         ) : (
           <span>{item.time}</span>

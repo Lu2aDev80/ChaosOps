@@ -469,7 +469,7 @@ const AdminLogin: React.FC = () => {
                         src={
                           org.logoUrl.startsWith("http")
                             ? org.logoUrl
-                            : `/minihackathon${org.logoUrl}`
+                            : `${org.logoUrl}`
                         }
                         alt={`${org.name} Logo`}
                         style={{

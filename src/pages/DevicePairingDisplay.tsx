@@ -1,7 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { PowerOff, RotateCcw, Settings, X } from 'lucide-react';
 import type { DayPlan } from '../types/schedule';
 import Planer from '../components/planner/Planer';
+import { api } from '../lib/api';
 
 interface StatusResponse {
   status: string;
@@ -11,7 +13,7 @@ interface StatusResponse {
   dayPlan: DayPlan | null;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/minihackathon/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 const POLL_INTERVAL = 3000; // Poll every 3 seconds
 
 const DevicePairingDisplay = () => {
@@ -23,6 +25,9 @@ const DevicePairingDisplay = () => {
   const [error, setError] = useState<string>('');
   const [currentTime, setCurrentTime] = useState(new Date());
   const pollingIntervalRef = useRef<number | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   // Load saved state from localStorage on mount
   useEffect(() => {
@@ -194,6 +199,80 @@ const DevicePairingDisplay = () => {
     };
   }, [deviceId, isPaired, assignedDayPlan]);
 
+  const handleDisconnect = async () => {
+    if (!deviceId) return;
+    
+    if (!window.confirm('Sind Sie sicher, dass Sie dieses Display trennen möchten? Das Display wird von der Organisation getrennt.')) {
+      return;
+    }
+
+    setDisconnecting(true);
+    try {
+      await api.disconnectDisplay(deviceId);
+      
+      // Clear local storage
+      localStorage.removeItem('displayId');
+      localStorage.removeItem('displayPaired');
+      localStorage.removeItem('displayOrgId');
+      localStorage.removeItem('assignedDayPlan');
+      
+      // Reset state
+      setDeviceId('');
+      setIsPaired(false);
+      setAssignedDayPlan(null);
+      setPairingCode('');
+      setShowSettings(false);
+      
+      alert('Display erfolgreich getrennt.');
+    } catch (error: any) {
+      console.error('Failed to disconnect display:', error);
+      alert('Fehler beim Trennen des Displays. Bitte versuchen Sie es erneut.');
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
+  const handleReset = async () => {
+    if (!deviceId) return;
+    
+    if (!window.confirm('Sind Sie sicher, dass Sie dieses Display zurücksetzen möchten? Alle Daten werden gelöscht und das Display muss neu gekoppelt werden.')) {
+      return;
+    }
+
+    setResetting(true);
+    try {
+      await api.resetDisplay(deviceId); // eslint-disable-line @typescript-eslint/no-unused-vars
+      
+      // Clear local storage
+      localStorage.removeItem('displayId');
+      localStorage.removeItem('displayPaired');
+      localStorage.removeItem('displayOrgId');
+      localStorage.removeItem('assignedDayPlan');
+      
+      // Instead of forcing immediate re-pairing, show the display as if the event ended
+      // by assigning a minimal day plan with a past date so the UI renders the 'ended' view.
+      const pastDate = new Date();
+      pastDate.setDate(pastDate.getDate() - 1);
+
+      setDeviceId('');
+      setPairingCode('');
+      setIsPaired(false);
+      setAssignedDayPlan({
+        name: 'Display zurückgesetzt',
+        date: pastDate.toISOString(),
+        scheduleItems: [],
+      } as any);
+      setShowSettings(false);
+
+      alert('Display erfolgreich zurückgesetzt. Auf dem Display wird der Event-Status als beendet angezeigt.');
+    } catch (error: any) {
+      console.error('Failed to reset display:', error);
+      alert('Fehler beim Zurücksetzen des Displays. Bitte versuchen Sie es erneut.');
+    } finally {
+      setResetting(false);
+    }
+  };
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -226,6 +305,201 @@ const DevicePairingDisplay = () => {
       >
         ← Zurück
       </button>
+
+      {/* Settings Button - Only show when paired */}
+      {isPaired && deviceId && (
+        <>
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            style={{
+              position: 'absolute',
+              top: 24,
+              right: 24,
+              background: '#fff',
+              border: '2px solid #181818',
+              borderRadius: '8px',
+              padding: '0.5rem',
+              fontFamily: 'Inter, Roboto, Arial, sans-serif',
+              cursor: 'pointer',
+              boxShadow: '2px 2px 0 #e5e7eb',
+              zIndex: 100,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '40px',
+              height: '40px',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#f3f4f6';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#fff';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+            title="Einstellungen"
+          >
+            <Settings size={20} />
+          </button>
+
+          {/* Settings Menu */}
+          {showSettings && (
+            <>
+              {/* Overlay */}
+              <div
+                onClick={() => setShowSettings(false)}
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: 'rgba(0, 0, 0, 0.3)',
+                  zIndex: 200
+                }}
+              />
+              
+              {/* Settings Panel */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 80,
+                  right: 24,
+                  background: '#fff',
+                  border: '2px solid #181818',
+                  borderRadius: '12px',
+                  padding: '1.5rem',
+                  boxShadow: '4px 6px 0 #181818',
+                  zIndex: 201,
+                  minWidth: '280px',
+                  fontFamily: 'Inter, Roboto, Arial, sans-serif'
+                }}
+              >
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '1rem'
+                }}>
+                  <h3 style={{
+                    margin: 0,
+                    fontSize: '1.1rem',
+                    fontWeight: 700,
+                    color: '#181818'
+                  }}>
+                    Display-Einstellungen
+                  </h3>
+                  <button
+                    onClick={() => setShowSettings(false)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '0.25rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#64748b'
+                    }}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.75rem'
+                }}>
+                  <button
+                    onClick={handleDisconnect}
+                    disabled={disconnecting}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      padding: '0.75rem 1rem',
+                      background: '#fee2e2',
+                      border: '2px solid #dc2626',
+                      borderRadius: '8px',
+                      color: '#dc2626',
+                      fontSize: '0.95rem',
+                      fontWeight: 600,
+                      cursor: disconnecting ? 'not-allowed' : 'pointer',
+                      opacity: disconnecting ? 0.6 : 1,
+                      transition: 'all 0.2s ease',
+                      fontFamily: 'Inter, Roboto, Arial, sans-serif'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!disconnecting) {
+                        e.currentTarget.style.backgroundColor = '#fecaca';
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#fee2e2';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    <PowerOff size={18} />
+                    {disconnecting ? 'Wird getrennt...' : 'Display trennen'}
+                  </button>
+
+                  <button
+                    onClick={handleReset}
+                    disabled={resetting}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      padding: '0.75rem 1rem',
+                      background: '#fef3c7',
+                      border: '2px solid #f59e0b',
+                      borderRadius: '8px',
+                      color: '#92400e',
+                      fontSize: '0.95rem',
+                      fontWeight: 600,
+                      cursor: resetting ? 'not-allowed' : 'pointer',
+                      opacity: resetting ? 0.6 : 1,
+                      transition: 'all 0.2s ease',
+                      fontFamily: 'Inter, Roboto, Arial, sans-serif'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!resetting) {
+                        e.currentTarget.style.backgroundColor = '#fde68a';
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#fef3c7';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    <RotateCcw size={18} />
+                    {resetting ? 'Wird zurückgesetzt...' : 'Display zurücksetzen'}
+                  </button>
+                </div>
+
+                <div style={{
+                  marginTop: '1rem',
+                  paddingTop: '1rem',
+                  borderTop: '1px solid #e5e7eb',
+                  fontSize: '0.85rem',
+                  color: '#64748b'
+                }}>
+                  <p style={{ margin: 0, marginBottom: '0.25rem' }}>
+                    <strong>Device ID:</strong>
+                  </p>
+                  <p style={{ margin: 0, fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                    {deviceId}
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
+        </>
+      )}
       {/* Flipchart Holes */}
       <div style={{
         position: 'absolute',
@@ -764,20 +1038,216 @@ const DevicePairingDisplay = () => {
 
           {/* Running View - Event is currently running - Show Planer Component */}
           {eventStatus.status === 'running' && (
-            <Planer
-              schedule={assignedDayPlan.scheduleItems || []}
-              date={new Date(assignedDayPlan.date).toLocaleDateString('de-DE', {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric'
-              })}
-              title={assignedDayPlan.name}
-              debug={false}
-              showClock={true}
-              autoCenter={true}
-              displayInfo={deviceId}
-            />
+            <>
+              <Planer
+                schedule={assignedDayPlan.scheduleItems || []}
+                date={new Date(assignedDayPlan.date).toLocaleDateString('de-DE', {
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
+                title={assignedDayPlan.name}
+                debug={false}
+                showClock={true}
+                autoCenter={true}
+                displayInfo={deviceId}
+              />
+              {/* Settings button overlay for running view */}
+              {isPaired && deviceId && (
+                <>
+                  <button
+                    onClick={() => setShowSettings(!showSettings)}
+                    style={{
+                      position: 'fixed',
+                      top: 24,
+                      right: 24,
+                      background: '#fff',
+                      border: '2px solid #181818',
+                      borderRadius: '8px',
+                      padding: '0.5rem',
+                      fontFamily: 'Inter, Roboto, Arial, sans-serif',
+                      cursor: 'pointer',
+                      boxShadow: '2px 2px 0 #e5e7eb',
+                      zIndex: 1000,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '40px',
+                      height: '40px',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#f3f4f6';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#fff';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                    title="Einstellungen"
+                  >
+                    <Settings size={20} />
+                  </button>
+
+                  {/* Settings Menu for running view */}
+                  {showSettings && (
+                    <>
+                      {/* Overlay */}
+                      <div
+                        onClick={() => setShowSettings(false)}
+                        style={{
+                          position: 'fixed',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background: 'rgba(0, 0, 0, 0.3)',
+                          zIndex: 1100
+                        }}
+                      />
+                      
+                      {/* Settings Panel */}
+                      <div
+                        style={{
+                          position: 'fixed',
+                          top: 80,
+                          right: 24,
+                          background: '#fff',
+                          border: '2px solid #181818',
+                          borderRadius: '12px',
+                          padding: '1.5rem',
+                          boxShadow: '4px 6px 0 #181818',
+                          zIndex: 1101,
+                          minWidth: '280px',
+                          fontFamily: 'Inter, Roboto, Arial, sans-serif'
+                        }}
+                      >
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          marginBottom: '1rem'
+                        }}>
+                          <h3 style={{
+                            margin: 0,
+                            fontSize: '1.1rem',
+                            fontWeight: 700,
+                            color: '#181818'
+                          }}>
+                            Display-Einstellungen
+                          </h3>
+                          <button
+                            onClick={() => setShowSettings(false)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              padding: '0.25rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: '#64748b'
+                            }}
+                          >
+                            <X size={20} />
+                          </button>
+                        </div>
+
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.75rem'
+                        }}>
+                          <button
+                            onClick={handleDisconnect}
+                            disabled={disconnecting}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.75rem',
+                              padding: '0.75rem 1rem',
+                              background: '#fee2e2',
+                              border: '2px solid #dc2626',
+                              borderRadius: '8px',
+                              color: '#dc2626',
+                              fontSize: '0.95rem',
+                              fontWeight: 600,
+                              cursor: disconnecting ? 'not-allowed' : 'pointer',
+                              opacity: disconnecting ? 0.6 : 1,
+                              transition: 'all 0.2s ease',
+                              fontFamily: 'Inter, Roboto, Arial, sans-serif'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!disconnecting) {
+                                e.currentTarget.style.backgroundColor = '#fecaca';
+                                e.currentTarget.style.transform = 'translateY(-1px)';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = '#fee2e2';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                            }}
+                          >
+                            <PowerOff size={18} />
+                            {disconnecting ? 'Wird getrennt...' : 'Display trennen'}
+                          </button>
+
+                          <button
+                            onClick={handleReset}
+                            disabled={resetting}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.75rem',
+                              padding: '0.75rem 1rem',
+                              background: '#fef3c7',
+                              border: '2px solid #f59e0b',
+                              borderRadius: '8px',
+                              color: '#92400e',
+                              fontSize: '0.95rem',
+                              fontWeight: 600,
+                              cursor: resetting ? 'not-allowed' : 'pointer',
+                              opacity: resetting ? 0.6 : 1,
+                              transition: 'all 0.2s ease',
+                              fontFamily: 'Inter, Roboto, Arial, sans-serif'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!resetting) {
+                                e.currentTarget.style.backgroundColor = '#fde68a';
+                                e.currentTarget.style.transform = 'translateY(-1px)';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = '#fef3c7';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                            }}
+                          >
+                            <RotateCcw size={18} />
+                            {resetting ? 'Wird zurückgesetzt...' : 'Display zurücksetzen'}
+                          </button>
+                        </div>
+
+                        <div style={{
+                          marginTop: '1rem',
+                          paddingTop: '1rem',
+                          borderTop: '1px solid #e5e7eb',
+                          fontSize: '0.85rem',
+                          color: '#64748b'
+                        }}>
+                          <p style={{ margin: 0, marginBottom: '0.25rem' }}>
+                            <strong>Device ID:</strong>
+                          </p>
+                          <p style={{ margin: 0, fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                            {deviceId}
+                          </p>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+            </>
           )}
         </>
       )}

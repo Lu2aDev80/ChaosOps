@@ -168,6 +168,7 @@ export const dayPlanService = {
       duration?: string;
       snacks?: string;
       facilitator?: string;
+      delay?: number;
       position: number;
     }
   ) {
@@ -188,6 +189,7 @@ export const dayPlanService = {
       time?: string;
       title?: string;
       position?: number;
+      delay?: number;
       [key: string]: any;
     }
   ) {

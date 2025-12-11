@@ -37,7 +37,7 @@ const DisplayPairingModal: React.FC<DisplayPairingModalProps> = ({
   const loadEvents = async () => {
     setLoadingEvents(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || '/minihackathon/api';
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
       const response = await fetch(`${apiUrl}/organisations/${orgId}/events`, {
         credentials: 'include',
       });

@@ -390,10 +390,24 @@ const EventCreationWizard: React.FC<Props> = ({
       if (editingDayPlan) {
         // Update existing day plan
         console.log('Updating day plan:', editingDayPlan.id, dayPlanData);
+        const scheduleForApi = (dayPlanData.scheduleItems || []).map((item: any) => ({
+          time: item.time || '09:00',
+          type: item.type || 'session',
+          title: item.title || '',
+          speaker: item.speaker,
+          location: item.location,
+          details: item.details,
+          materials: item.materials,
+          duration: item.duration,
+          snacks: item.snacks,
+          facilitator: item.facilitator,
+          delay: typeof item.delay === 'number' ? item.delay : undefined,
+        }));
+
         const updated = await api.updateDayPlan(editingDayPlan.id, {
           name: dayPlanData.name,
           date: dayPlanData.date,
-          schedule: dayPlanData.scheduleItems
+          schedule: scheduleForApi
         });
 
         const updatedDayPlan: DayPlan = {
@@ -411,10 +425,24 @@ const EventCreationWizard: React.FC<Props> = ({
         return;
       }
 
+      const scheduleForApi = (dayPlanData.scheduleItems || []).map((item: any) => ({
+        time: item.time || '09:00',
+        type: item.type || 'session',
+        title: item.title || '',
+        speaker: item.speaker,
+        location: item.location,
+        details: item.details,
+        materials: item.materials,
+        duration: item.duration,
+        snacks: item.snacks,
+        facilitator: item.facilitator,
+        delay: typeof item.delay === 'number' ? item.delay : undefined,
+      }));
+
       const created = await api.createDayPlan(createdEvent.id, {
         name: dayPlanData.name,
         date: dayPlanData.date,
-        schedule: dayPlanData.scheduleItems
+        schedule: scheduleForApi
       });
 
       const newDayPlan: DayPlan = {
@@ -437,9 +465,23 @@ const EventCreationWizard: React.FC<Props> = ({
   const handleSaveSchedule = async (schedule: ScheduleItem[]) => {
     if (!createdEvent || !createdDayPlan) return;
     try {
+      const scheduleForApi = (schedule || []).map((item: any) => ({
+        time: item.time || '09:00',
+        type: item.type || 'session',
+        title: item.title || '',
+        speaker: item.speaker,
+        location: item.location,
+        details: item.details,
+        materials: item.materials,
+        duration: item.duration,
+        snacks: item.snacks,
+        facilitator: item.facilitator,
+        delay: typeof item.delay === 'number' ? item.delay : undefined,
+      }));
+
       // Update the day plan with the new schedule
       const updated = await api.updateDayPlan(createdDayPlan.id, {
-        schedule: schedule
+        schedule: scheduleForApi
       });
 
       const updatedDayPlan: DayPlan = {

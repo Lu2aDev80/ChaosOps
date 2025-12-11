@@ -205,9 +205,11 @@ router.post('/events/:eventId/day-plans', requireAuth, async (req: AuthRequest, 
         materials: item.materials || undefined,
         duration: item.duration || undefined,
         snacks: item.snacks || undefined,
-        facilitator: item.facilitator || undefined,
+          facilitator: item.facilitator || undefined,
+          delay: typeof item.delay === 'number' ? item.delay : undefined,
         position: index,
       }))
+      console.log(`[events] creating ${items.length} schedule items for dayPlan ${dayPlan.id}:`, JSON.stringify(items));
       await prisma.scheduleItem.createMany({ data: items })
     }
 
@@ -228,6 +230,13 @@ router.patch('/day-plans/:dayPlanId', requireAuth, async (req: AuthRequest, res)
   try {
     const { dayPlanId } = req.params
     const { name, date, schedule } = req.body
+
+    // Debugging: log incoming schedule payload to help trace delay persistence issues
+    try {
+      console.log(`[events] PATCH /day-plans/${dayPlanId} received schedule:`, JSON.stringify(schedule || []));
+    } catch (e) {
+      console.log(`[events] PATCH /day-plans/${dayPlanId} received schedule (non-serializable)`);
+    }
 
     const dayPlan = await prisma.dayPlan.findUnique({ 
       where: { id: dayPlanId },
@@ -267,8 +276,10 @@ router.patch('/day-plans/:dayPlanId', requireAuth, async (req: AuthRequest, res)
           duration: item.duration || undefined,
           snacks: item.snacks || undefined,
           facilitator: item.facilitator || undefined,
+          delay: typeof item.delay === 'number' ? item.delay : undefined,
           position: index,
         }))
+        console.log(`[events] recreating ${items.length} schedule items for dayPlan ${dayPlanId}:`, JSON.stringify(items));
         await prisma.scheduleItem.createMany({ data: items })
       }
     }

@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,93 +7,78 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Organisation model
 model Organisation {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  logoUrl     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  events      Event[]
-  users       User[]
-  invitations Invitation[]
-  eventTags   EventTag[]
+  id               String            @id @default(uuid())
+  name             String
+  description      String?
+  logoUrl          String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  displays         Display[]
+  eventTags        EventTag[]
+  events           Event[]
+  invitations      Invitation[]
   scheduleItemTags ScheduleItemTag[]
-  displays    Display[]
+  users            User[]
 
   @@map("organisations")
 }
 
-// Event model
 model Event {
-  id             String   @id @default(uuid())
-  name           String
-  description    String?
-  organisationId String
-  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  dayPlans       DayPlan[]
-  tags           EventTag[] @relation("EventToEventTag")
+  id              String            @id @default(uuid())
+  name            String
+  description     String?
+  organisationId  String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  EventToEventTag EventToEventTag[]
+  dayPlans        DayPlan[]
+  organisation    Organisation      @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
   @@map("events")
 }
 
-// DayPlan model
 model DayPlan {
-  id        String   @id @default(uuid())
-  eventId   String
-  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  name      String
-  date      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String         @id @default(uuid())
+  eventId       String
+  name          String
+  date          String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  event         Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
   scheduleItems ScheduleItem[]
 
   @@map("day_plans")
 }
 
-// ScheduleItem model (supports all item types)
 model ScheduleItem {
-  id               Int      @id @default(autoincrement())
-  dayPlanId        String
-  dayPlan          DayPlan  @relation(fields: [dayPlanId], references: [id], onDelete: Cascade)
-  time             String
-  type             ScheduleItemType
-  title            String
-  speaker          String?
-  location         String?
-  details          String?
-  materials        String?
-  duration         String?
-  snacks           String?
-  facilitator      String?
-  // Change tracking fields
-  timeChanged      Boolean? @default(false)
-  positionChanged  Boolean? @default(false)
-  originalTime     String?
-  originalPosition Int?
-  // Position in schedule
-  position         Int      @default(0)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  tags             ScheduleItemTag[] @relation("ScheduleItemToScheduleItemTag")
+  id                            Int                             @id @default(autoincrement())
+  dayPlanId                     String
+  time                          String
+  type                          ScheduleItemType
+  title                         String
+  speaker                       String?
+  location                      String?
+  details                       String?
+  materials                     String?
+  duration                      String?
+  snacks                        String?
+  facilitator                   String?
+  timeChanged                   Boolean?                        @default(false)
+  positionChanged               Boolean?                        @default(false)
+  originalTime                  String?
+  originalPosition              Int?
+  position                      Int                             @default(0)
+  createdAt                     DateTime                        @default(now())
+  updatedAt                     DateTime                        @updatedAt
+  delay                         Int?
+  ScheduleItemToScheduleItemTag ScheduleItemToScheduleItemTag[]
+  dayPlan                       DayPlan                         @relation(fields: [dayPlanId], references: [id], onDelete: Cascade)
 
-  @@map("schedule_items")
   @@index([dayPlanId, position])
+  @@map("schedule_items")
 }
 
-enum ScheduleItemType {
-  session
-  workshop
-  break
-  announcement
-  game
-  transition
-}
-
-// Admin users (for authentication)
 model AdminUser {
   id           String   @id @default(uuid())
   username     String   @unique
@@ -108,108 +90,133 @@ model AdminUser {
   @@map("admin_users")
 }
 
-// Core user model scoped to an organisation
 model User {
-  id                      String        @id @default(uuid())
-  organisationId          String
-  organisation            Organisation  @relation(fields: [organisationId], references: [id], onDelete: Cascade)
-  username                String
-  email                   String
-  passwordHash            String
-  role                    UserRole      @default(member)
-  emailVerified           Boolean       @default(false)
-  emailVerificationToken  String?       @unique
-  tokenExpiresAt          DateTime?
-  createdAt               DateTime      @default(now())
-  updatedAt               DateTime      @updatedAt
-  sessions                Session[]
+  id                     String       @id @default(uuid())
+  organisationId         String
+  username               String
+  email                  String
+  passwordHash           String
+  role                   UserRole     @default(member)
+  emailVerified          Boolean      @default(false)
+  emailVerificationToken String?      @unique
+  tokenExpiresAt         DateTime?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+  sessions               Session[]
+  organisation           Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
   @@unique([organisationId, username])
   @@unique([organisationId, email])
   @@map("users")
 }
 
-// Session for cookie-based auth
 model Session {
-  id         String   @id @default(uuid())
-  token      String   @unique
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt  DateTime @default(now())
-  expiresAt  DateTime
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
 }
 
-enum UserRole {
-  admin
-  member
-}
-
-// Invitation model for pending user invitations
 model Invitation {
-  id                String   @id @default(uuid())
-  organisationId    String
-  organisation      Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
-  email             String
-  role              UserRole @default(member)
-  token             String   @unique
-  expiresAt         DateTime
-  createdAt         DateTime @default(now())
-  invitedBy         String   // username of the inviter
+  id             String       @id @default(uuid())
+  organisationId String
+  email          String
+  role           UserRole     @default(member)
+  token          String       @unique
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+  invitedBy      String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
   @@unique([organisationId, email])
   @@map("invitations")
 }
 
-// EventTag model for event categorization
 model EventTag {
-  id             String   @id @default(uuid())
-  name           String
-  color          String   @default("#64748b") // Hex color for visual distinction
-  organisationId String
-  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
-  events         Event[]  @relation("EventToEventTag")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id              String            @id @default(uuid())
+  name            String
+  color           String            @default("#64748b")
+  organisationId  String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  EventToEventTag EventToEventTag[]
+  organisation    Organisation      @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
   @@unique([organisationId, name])
   @@map("event_tags")
 }
 
-// ScheduleItemTag model for schedule item categorization
 model ScheduleItemTag {
-  id             String   @id @default(uuid())
-  name           String
-  color          String   @default("#64748b") // Hex color for visual distinction
-  organisationId String
-  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
-  scheduleItems  ScheduleItem[] @relation("ScheduleItemToScheduleItemTag")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                            String                          @id @default(uuid())
+  name                          String
+  color                         String                          @default("#64748b")
+  organisationId                String
+  createdAt                     DateTime                        @default(now())
+  updatedAt                     DateTime                        @updatedAt
+  ScheduleItemToScheduleItemTag ScheduleItemToScheduleItemTag[]
+  organisation                  Organisation                    @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
   @@unique([organisationId, name])
   @@map("schedule_item_tags")
 }
 
-// Display model for registered display screens
 model Display {
   id               String        @id @default(uuid())
-  organisationId   String?       // Can be null until paired
-  organisation     Organisation? @relation(fields: [organisationId], references: [id], onDelete: Cascade)
-  name             String        // User-friendly name for the display
-  registrationCode String?       @unique // Temporary code for registration via URL
-  codeExpiresAt    DateTime?     // Expiration for registration code
-  pairingCode      String?       @unique // 6-digit pairing code from socket connection
-  socketId         String?       // Socket.io connection ID
-  status           DeviceStatus  @default(PENDING)
+  organisationId   String?
+  name             String
+  registrationCode String?       @unique
+  codeExpiresAt    DateTime?
   isActive         Boolean       @default(false)
-  currentDayPlanId String?       // Currently assigned day plan
-  lastSeenAt       DateTime      @default(now()) // For monitoring
+  currentDayPlanId String?
+  lastSeenAt       DateTime      @default(now())
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
+  pairingCode      String?       @unique
+  socketId         String?
+  status           DeviceStatus  @default(PENDING)
+  organisation     Organisation? @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
   @@map("displays")
+}
+
+model EventToEventTag {
+  A          String
+  B          String
+  events     Event    @relation(fields: [A], references: [id], onDelete: Cascade)
+  event_tags EventTag @relation(fields: [B], references: [id], onDelete: Cascade)
+
+  @@id([A, B], map: "_EventToEventTag_AB_pkey")
+  @@index([B], map: "_EventToEventTag_B_index")
+  @@map("_EventToEventTag")
+}
+
+model ScheduleItemToScheduleItemTag {
+  A                  Int
+  B                  String
+  schedule_items     ScheduleItem    @relation(fields: [A], references: [id], onDelete: Cascade)
+  schedule_item_tags ScheduleItemTag @relation(fields: [B], references: [id], onDelete: Cascade)
+
+  @@id([A, B], map: "_ScheduleItemToScheduleItemTag_AB_pkey")
+  @@index([B], map: "_ScheduleItemToScheduleItemTag_B_index")
+  @@map("_ScheduleItemToScheduleItemTag")
+}
+
+enum ScheduleItemType {
+  session
+  workshop
+  break
+  announcement
+  game
+  transition
+}
+
+enum UserRole {
+  admin
+  member
 }
 
 enum DeviceStatus {

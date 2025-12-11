@@ -11,7 +11,7 @@ interface OrganisationCardProps {
 
 const OrganisationCard: React.FC<OrganisationCardProps> = ({ name, description, logoUrl, selected, onClick }) => {
   // Get API base URL and construct full logo URL
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/minihackathon';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
   const fullLogoUrl = logoUrl && logoUrl.startsWith('http') ? logoUrl : logoUrl ? `${API_BASE_URL}${logoUrl}` : undefined;
   
   return (

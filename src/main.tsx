@@ -8,9 +8,17 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App.tsx'
 import { AuthProvider } from "./context/AuthContext";
 
+  <StrictMode>
+    <BrowserRouter basename="">
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </BrowserRouter>
+  </StrictMode>
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <BrowserRouter basename="/minihackathon">
+    <BrowserRouter>
       <AuthProvider>
         <App />
       </AuthProvider>

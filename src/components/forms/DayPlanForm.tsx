@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Calendar, ChevronRight } from 'lucide-react';
 // ...existing code...
 import type { Event, DayPlan } from '../../types/event';
@@ -19,8 +19,26 @@ const DayPlanForm: React.FC<DayPlanFormProps> = ({
   onCancel
 }) => {
   const [name, setName] = useState(dayPlan?.name || '');
-  const [date, setDate] = useState(dayPlan?.date || new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(
+    dayPlan?.date 
+      ? (typeof dayPlan.date === 'string' 
+          ? dayPlan.date.split('T')[0] 
+          : new Date(dayPlan.date).toISOString().split('T')[0])
+      : new Date().toISOString().split('T')[0]
+  );
   const isBasicValid = name.trim().length > 0 && date;
+  
+  // Update form when dayPlan prop changes
+  useEffect(() => {
+    if (dayPlan) {
+      setName(dayPlan.name || '');
+      setDate(
+        typeof dayPlan.date === 'string' 
+          ? dayPlan.date.split('T')[0] 
+          : new Date(dayPlan.date).toISOString().split('T')[0]
+      );
+    }
+  }, [dayPlan]);
 
   return (
     <div style={{ 

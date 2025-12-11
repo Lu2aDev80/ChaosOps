@@ -19,7 +19,7 @@ import { validateURLGeneration } from "./utils/urlHelper";
 const app = express();
 const httpServer = http.createServer(app);
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
-// Optional base path for running behind reverse proxies (e.g., /minihackathon)
+// Optional base path for running behind reverse proxies (z.B. /, Standard: leer)
 const BASE_PATH = (process.env.APP_BASE_PATH || '').trim();
 const apiBase = `${BASE_PATH}/api`;
 

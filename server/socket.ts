@@ -51,7 +51,7 @@ export function setupSocketIO(httpServer: HTTPServer) {
       credentials: true
     },
     // Important: Configure Socket.IO path to match the base path used in frontend
-    // In production with /minihackathon base: socket.io is at /minihackathon/socket.io/
+    // In production: socket.io is at /socket.io/
     path: process.env.APP_BASE_PATH ? `${process.env.APP_BASE_PATH}/socket.io/` : '/socket.io/'
   });
 

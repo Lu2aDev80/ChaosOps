@@ -63,8 +63,8 @@ const Dashboard: React.FC = () => {
   // Device pairing state
   const [showDevicePairingModal, setShowDevicePairingModal] = useState(false);
   // Dummy: Display verbunden (später mit echter Logik ersetzen)
-  const [isDisplayConnected, setIsDisplayConnected] = useState(true);
-  const [delayActive, setDelayActive] = useState(false);
+  // const [isDisplayConnected, setIsDisplayConnected] = useState(true);
+  // const [delayActive, setDelayActive] = useState(false);
 
   // UI state for improved overview
   const [searchQuery, setSearchQuery] = useState('');
@@ -213,6 +213,7 @@ const Dashboard: React.FC = () => {
         duration: item.duration,
         snacks: item.snacks,
         facilitator: item.facilitator,
+        delay: typeof item.delay === 'number' ? item.delay : undefined,
       })) || [];
 
       const created = await api.createDayPlan(selectedEvent.id, {
@@ -263,27 +264,34 @@ const Dashboard: React.FC = () => {
         facilitator: item.facilitator,
       })) || [];
 
-      await api.updateDayPlan(editingDayPlan.id, {
+      const updated = await api.updateDayPlan(editingDayPlan.id, {
         name: dayPlanData.name,
         date: dayPlanData.date,
         schedule: scheduleForApi
       });
 
+      // Use the response from API to ensure we have the correct data structure
+      const updatedDayPlan: DayPlan = {
+        id: updated.id,
+        eventId: updated.eventId,
+        name: updated.name,
+        date: updated.date,
+        scheduleItems: updated.scheduleItems || [],
+        createdAt: updated.createdAt,
+        updatedAt: updated.updatedAt,
+      };
+
       const updatedEvents = events.map((e) =>
         e.id === selectedEvent.id
           ? {
-            ...e,
-            dayPlans: e.dayPlans.map((d) =>
-              d.id === editingDayPlan.id
-                ? {
-                  ...d,
-                  ...dayPlanData,
-                  updatedAt: new Date().toISOString()
-                }
-                : d
-            ),
-            updatedAt: new Date().toISOString(),
-          }
+              ...e,
+              dayPlans: e.dayPlans.map((d) =>
+                d.id === editingDayPlan.id
+                  ? updatedDayPlan
+                  : d
+              ),
+              updatedAt: new Date().toISOString(),
+            }
           : e
       );
       setEventsState(updatedEvents);
@@ -399,27 +407,56 @@ const Dashboard: React.FC = () => {
   //   return { totalEvents: events.length, totalDayPlans, totalScheduleItems };
   // }, [events]);
 
-  const handleSaveSchedule = (schedule: ScheduleItem[]) => {
+  const handleSaveSchedule = async (schedule: ScheduleItem[]) => {
     if (!selectedEvent || !managingSchedule) return;
 
-    const updatedEvents = events.map((e) =>
-      e.id === selectedEvent.id
-        ? {
-          ...e,
-          dayPlans: e.dayPlans.map((d) =>
-            d.id === managingSchedule.id
-              ? { ...d, scheduleItems: schedule, updatedAt: new Date().toISOString() }
-              : d
-          ),
-          updatedAt: new Date().toISOString(),
-        }
-        : e
-    );
-    setEventsState(updatedEvents);
-    setSelectedEvent(
-      updatedEvents.find((e) => e.id === selectedEvent.id) || null
-    );
-    setManagingSchedule(null);
+    try {
+      // Prepare schedule payload for API (strip any client-only fields)
+      const scheduleForApi = schedule.map((item: any) => ({
+        time: item.time || '09:00',
+        type: item.type || 'session',
+        title: item.title || '',
+        speaker: item.speaker,
+        location: item.location,
+        details: item.details,
+        materials: item.materials,
+        duration: item.duration,
+        snacks: item.snacks,
+        facilitator: item.facilitator,
+        delay: typeof item.delay === 'number' ? item.delay : undefined,
+      }));
+
+      // Persist to server
+      const updated = await api.updateDayPlan(managingSchedule.id, {
+        schedule: scheduleForApi,
+      });
+
+      const updatedDayPlan: DayPlan = {
+        id: updated.id,
+        eventId: updated.eventId,
+        name: updated.name,
+        date: updated.date,
+        scheduleItems: updated.scheduleItems || [],
+        createdAt: updated.createdAt,
+        updatedAt: updated.updatedAt,
+      };
+
+      const updatedEvents = events.map((e) =>
+        e.id === selectedEvent.id
+          ? {
+              ...e,
+              dayPlans: e.dayPlans.map((d) => (d.id === managingSchedule.id ? updatedDayPlan : d)),
+              updatedAt: new Date().toISOString(),
+            }
+          : e
+      );
+
+      setEventsState(updatedEvents);
+      setSelectedEvent(updatedEvents.find((e) => e.id === selectedEvent.id) || null);
+      setManagingSchedule(null);
+    } catch (err) {
+      console.error('Save schedule failed', err);
+    }
   };
 
   // Show Schedule Manager
@@ -564,7 +601,7 @@ const Dashboard: React.FC = () => {
 
           <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
             <img
-              src={organisationLogo ? (organisationLogo.startsWith('http') ? organisationLogo : `/minihackathon${organisationLogo}`) : chaosOpsLogo}
+              src={organisationLogo ? (organisationLogo.startsWith('http') ? organisationLogo : `${organisationLogo}`) : chaosOpsLogo}
               alt={organisationLogo ? `${organisationName} Logo` : "Chaos Ops Logo"}
               style={{
                 maxWidth: "150px",
@@ -1044,19 +1081,148 @@ const Dashboard: React.FC = () => {
 
         {/* Content Grid */}
 
-        <LivePlanControl
-          isConnected={isDisplayConnected}
-          delayActive={delayActive}
-          onDelay={() => setDelayActive((prev) => !prev)}
-          onSendUpdate={() => window.alert("Änderungen wurden live gesendet!")}
-          displays={[
-            { id: "1", name: "Display 1" },
-            { id: "2", name: "Display 2" }
-          ]} // TODO: Ersetze durch echte Display-Liste aus State
-          planName={selectedEvent?.dayPlans?.[0]?.name || ""}
-          eventName={selectedEvent?.name || ""}
-          compactMode={viewMode === 'compact'}
-        />
+        {orgId && (() => {
+          // Calculate next item information for LivePlanControl
+          const getNextItemInfo = () => {
+            if (!selectedEvent?.dayPlans?.[0]?.scheduleItems) return null;
+            
+            const dayPlan = selectedEvent.dayPlans[0];
+            const now = new Date();
+            
+            // Helper to convert HH:MM to Date on the dayPlan date
+            const toDate = (dateStr: string, timeStr: string) => {
+              const d = new Date(dateStr);
+              const parts = (timeStr || '00:00').split(':').map((p) => parseInt(p, 10));
+              d.setHours(parts[0] || 0, parts[1] || 0, 0, 0);
+              return d;
+            };
+
+            // Find next upcoming schedule item (consider existing delay when deciding)
+            const nextItem = dayPlan.scheduleItems.find((si: any) => {
+              const base = toDate(dayPlan.date, si.time || '00:00');
+              const existingDelay = typeof si.delay === 'number' ? si.delay : 0;
+              base.setMinutes(base.getMinutes() + existingDelay);
+              return base >= now;
+            });
+
+            if (!nextItem) return null;
+
+            // Calculate the adjusted time with delay
+            const baseTime = toDate(dayPlan.date, nextItem.time || '00:00');
+            const adjustedDelay = typeof nextItem.delay === 'number' ? nextItem.delay : 0;
+            baseTime.setMinutes(baseTime.getMinutes() + adjustedDelay);
+            
+            const timeStr = baseTime.toLocaleTimeString('de-DE', { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            });
+
+            return {
+              title: nextItem.title,
+              time: timeStr
+            };
+          };
+
+          const nextItemInfo = getNextItemInfo();
+
+          return (
+            <LivePlanControl
+              organisationId={orgId}
+              selectedDayPlanId={selectedEvent?.dayPlans?.[0]?.id || null}
+              nextItemTitle={nextItemInfo?.title}
+              nextItemTime={nextItemInfo?.time}
+              onDelay={async (minutes) => {
+                if (!selectedEvent || !selectedEvent.dayPlans || selectedEvent.dayPlans.length === 0) {
+                  window.alert('Kein Tagesplan ausgewählt.');
+                  return;
+                }
+
+                const dayPlanId = selectedEvent.dayPlans[0].id;
+                try {
+                  const dayPlan = await api.getDayPlan(dayPlanId);
+                  console.debug('[LiveDelay] fetched dayPlan', dayPlanId, dayPlan?.scheduleItems?.length);
+
+                  // Helper to convert HH:MM to Date on the dayPlan date
+                  const toDate = (dateStr: string, timeStr: string) => {
+                    const d = new Date(dateStr);
+                    const parts = (timeStr || '00:00').split(':').map((p) => parseInt(p, 10));
+                    d.setHours(parts[0] || 0, parts[1] || 0, 0, 0);
+                    return d;
+                  };
+
+                  const now = new Date();
+
+                  // Find next upcoming schedule item (consider existing delay when deciding)
+                  const nextItem = (dayPlan.scheduleItems || []).find((si: any) => {
+                    const base = toDate(dayPlan.date, si.time || '00:00');
+                    const existingDelay = typeof si.delay === 'number' ? si.delay : 0;
+                    base.setMinutes(base.getMinutes() + existingDelay);
+                    return base >= now;
+                  });
+
+                  if (!nextItem) {
+                    window.alert('Kein kommendes Element im Tagesplan gefunden.');
+                    return;
+                  }
+
+                  // Build updated schedule array including updated delay for the target item
+                  const updatedSchedule = (dayPlan.scheduleItems || []).map((si: any) => {
+                    if (si.id === nextItem.id) {
+                      return { ...si, delay: (typeof si.delay === 'number' ? si.delay : 0) + minutes };
+                    }
+                    return si;
+                  }).map((si: any) => ({
+                    time: si.time,
+                    type: si.type,
+                    title: si.title,
+                    speaker: si.speaker,
+                    location: si.location,
+                    details: si.details,
+                    materials: si.materials,
+                    duration: si.duration,
+                    snacks: si.snacks,
+                    facilitator: si.facilitator,
+                    delay: typeof si.delay === 'number' ? si.delay : undefined,
+                  }));
+
+                  // Persist updated schedule to server
+                  console.debug('[LiveDelay] sending updated schedule for dayPlan', dayPlanId, updatedSchedule);
+                  const updated = await api.updateDayPlan(dayPlanId, { schedule: updatedSchedule });
+                  console.debug('[LiveDelay] updateDayPlan response', updated);
+
+                  // Update local events state with returned dayPlan
+                  const updatedDayPlan: DayPlan = {
+                    id: updated.id,
+                    eventId: updated.eventId,
+                    name: updated.name,
+                    date: updated.date,
+                    scheduleItems: updated.scheduleItems || [],
+                    createdAt: updated.createdAt,
+                    updatedAt: updated.updatedAt,
+                  };
+
+                  const updatedEvents = events.map((e) =>
+                    e.id === selectedEvent.id
+                      ? {
+                          ...e,
+                          dayPlans: e.dayPlans.map((d) => (d.id === dayPlanId ? updatedDayPlan : d)),
+                          updatedAt: new Date().toISOString(),
+                        }
+                      : e
+                  );
+
+                  setEventsState(updatedEvents);
+                  setSelectedEvent(updatedEvents.find((e) => e.id === selectedEvent.id) || null);
+
+                  window.alert(`+${minutes} Minuten zur nächsten Aktion hinzugefügt (${nextItem.title}).`);
+                } catch (err) {
+                  console.error('Failed to apply delay to next item', err);
+                  window.alert('Fehler beim Anwenden der Zeitverzögerung.');
+                }
+              }}
+          />
+          );
+        })()}
 
         {/* Add spacing between live controls and Veranstaltungen */}
         <div style={{ height: "2.5rem" }} />
@@ -1734,7 +1900,7 @@ const Dashboard: React.FC = () => {
                             <button
                               onClick={() => {
                                 setEditingDayPlan(dayPlan);
-                                setShowWizard(true);
+                                setShowDayPlanForm(true);
                               }}
                               style={{
                                 padding: "0.5rem",

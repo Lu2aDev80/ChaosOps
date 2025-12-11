@@ -13,6 +13,8 @@ export interface ScheduleItem {
   duration?: string;
   snacks?: string;
   facilitator?: string;
+  // Optional client-side delay in minutes to shift the item's time
+  delay?: number;
   timeChanged?: boolean;
   positionChanged?: boolean;
   originalTime?: string;

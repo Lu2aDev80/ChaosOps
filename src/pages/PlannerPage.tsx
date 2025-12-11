@@ -3,19 +3,59 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import Planer from '../components/planner/Planer';
 import type { ScheduleItem } from '../types/schedule';
 
-// Helper to create sample schedule items with required fields
-const createSampleItem = (partial: Partial<ScheduleItem>): ScheduleItem => ({
-  id: 0,
-  dayPlanId: 'sample',
-  position: 0,
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  tags: [],
-  ...partial,
-  time: partial.time || '00:00',
-  type: partial.type || 'session',
-  title: partial.title || 'Untitled',
-});
+// Helper to add minutes to a HH:MM time string
+const addMinutesToTime = (timeStr: string, minutesToAdd?: number) => {
+  if (!timeStr) return '00:00';
+  const parts = timeStr.split(':').map((p) => parseInt(p, 10));
+  if (parts.length < 2 || Number.isNaN(parts[0]) || Number.isNaN(parts[1])) return timeStr;
+  const h = parts[0];
+  const m = parts[1];
+  const date = new Date();
+  date.setHours(h, m, 0, 0);
+  if (minutesToAdd && !Number.isNaN(minutesToAdd)) {
+    date.setMinutes(date.getMinutes() + minutesToAdd);
+  }
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mm = String(date.getMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
+};
+
+// Helper to create schedule items (used for sample + when loading live day plan)
+const createSampleItem = (partial: Partial<ScheduleItem>): ScheduleItem => {
+  const base: ScheduleItem = {
+    id: 0,
+    dayPlanId: 'sample',
+    position: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    tags: [],
+    time: '00:00',
+    type: 'session',
+    title: 'Untitled',
+  } as ScheduleItem;
+
+  // Merge partial onto base
+  const merged = { ...base, ...partial } as ScheduleItem;
+
+  // If a delay is present, compute the shifted time and record originalTime
+  if (typeof partial.delay === 'number' && partial.delay !== 0) {
+    const original = partial.originalTime || partial.time || merged.time || '00:00';
+    merged.originalTime = original;
+    merged.time = addMinutesToTime(original, partial.delay);
+    merged.timeChanged = true;
+  } else if (partial.originalTime && partial.originalTime !== merged.time) {
+    // If server returned originalTime (no delay field), keep it
+    merged.originalTime = partial.originalTime;
+    merged.timeChanged = true;
+  }
+
+  // If originalPosition provided and differs, mark positionChanged
+  if (typeof partial.originalPosition === 'number' && partial.originalPosition !== undefined) {
+    merged.positionChanged = partial.originalPosition !== merged.position;
+  }
+
+  return merged;
+};
 
 // Sample schedule for demo/development
 // Includes examples of time and position changes for demonstration
@@ -98,7 +138,10 @@ const PlannerPage: React.FC = () => {
           
           if (dayPlan) {
             // Map scheduleItems to schedule format expected by Planer component
-            const newSchedule = (dayPlan.scheduleItems || []).map((item: ScheduleItem) => item);
+            // Use createSampleItem to enrich live items (apply delay -> shifted time, mark timeChanged)
+            const newSchedule = (dayPlan.scheduleItems || []).map((item: ScheduleItem) =>
+              createSampleItem(item)
+            );
             
             const newTitle = dayPlan.name;
             const newDate = new Date(dayPlan.date).toLocaleDateString('de-DE', {

@@ -224,4 +224,90 @@ router.put('/displays/pairing/:displayId/dayplan', async (req: Request, res: Res
   }
 });
 
+// POST /api/displays/pairing/:displayId/disconnect
+// Disconnect display from organization (deactivate)
+router.post('/displays/pairing/:displayId/disconnect', async (req: Request, res: Response) => {
+  try {
+    const { displayId } = req.params;
+
+    const display = await prisma.display.findUnique({
+      where: { id: displayId }
+    });
+
+    if (!display) {
+      return res.status(404).json({ error: 'Display not found' });
+    }
+
+    // Deactivate display and clear organization association
+    const updatedDisplay = await prisma.display.update({
+      where: { id: displayId },
+      data: {
+        isActive: false,
+        organisationId: null,
+        status: DeviceStatus.PENDING,
+        currentDayPlanId: null
+      }
+    });
+
+    logger.info(`Display ${displayId} disconnected`);
+
+    res.json({
+      success: true,
+      message: 'Display disconnected successfully',
+      display: updatedDisplay
+    });
+
+  } catch (error) {
+    logger.error('Error disconnecting display:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/displays/pairing/:displayId/reset
+// Reset display completely (delete and recreate)
+router.post('/displays/pairing/:displayId/reset', async (req: Request, res: Response) => {
+  try {
+    const { displayId } = req.params;
+
+    const display = await prisma.display.findUnique({
+      where: { id: displayId }
+    });
+
+    if (!display) {
+      return res.status(404).json({ error: 'Display not found' });
+    }
+
+    // Delete the old display
+    await prisma.display.delete({
+      where: { id: displayId }
+    });
+
+    // Generate new pairing code
+    const pairingCode = await generateUniquePairingCode();
+
+    // Create new display entry
+    const newDisplay = await prisma.display.create({
+      data: {
+        pairingCode,
+        socketId: null,
+        status: DeviceStatus.PENDING,
+        name: `Display ${pairingCode}`
+      }
+    });
+
+    logger.info(`Display ${displayId} reset, new display created: ${newDisplay.id}`);
+
+    res.json({
+      success: true,
+      message: 'Display reset successfully',
+      code: pairingCode,
+      deviceId: newDisplay.id
+    });
+
+  } catch (error) {
+    logger.error('Error resetting display:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;
