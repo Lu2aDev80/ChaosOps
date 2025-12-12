@@ -510,6 +510,20 @@ const Dashboard: React.FC = () => {
             // Update existing event in the list
             setEventsState(events.map(e => e.id === editingEvent.id ? newEvent : e));
             setSelectedEvent(newEvent);
+          } else if (editingDayPlan) {
+            // Update the event that contains the editingDayPlan
+            setEventsState(events.map(e => 
+              e.dayPlans.some(dp => dp.id === editingDayPlan.id) ? 
+                { ...e, dayPlans: e.dayPlans.map(dp => dp.id === editingDayPlan.id ? newEvent.dayPlans[0] : dp) } : 
+                e
+            ));
+            // Also update selectedEvent if it has the dayPlan
+            if (selectedEvent && selectedEvent.dayPlans.some(dp => dp.id === editingDayPlan.id)) {
+              setSelectedEvent({
+                ...selectedEvent,
+                dayPlans: selectedEvent.dayPlans.map(dp => dp.id === editingDayPlan.id ? newEvent.dayPlans[0] : dp)
+              });
+            }
           } else {
             // Add new event
             setEventsState([...events, newEvent]);

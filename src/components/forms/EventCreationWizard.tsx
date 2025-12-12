@@ -463,7 +463,9 @@ const EventCreationWizard: React.FC<Props> = ({
   };
 
   const handleSaveSchedule = async (schedule: ScheduleItem[]) => {
-    if (!createdEvent || !createdDayPlan) return;
+    const dayPlanToUpdate = createdDayPlan || editingDayPlan;
+    if (!dayPlanToUpdate) return;
+
     try {
       const scheduleForApi = (schedule || []).map((item: any) => ({
         time: item.time || '09:00',
@@ -480,7 +482,7 @@ const EventCreationWizard: React.FC<Props> = ({
       }));
 
       // Update the day plan with the new schedule
-      const updated = await api.updateDayPlan(createdDayPlan.id, {
+      const updated = await api.updateDayPlan(dayPlanToUpdate.id, {
         schedule: scheduleForApi
       });
 
@@ -494,12 +496,28 @@ const EventCreationWizard: React.FC<Props> = ({
         updatedAt: updated.updatedAt,
       };
 
-      setCreatedDayPlan(updatedDayPlan);
-      const finalEvent: Event = {
-        ...createdEvent,
-        dayPlans: [updatedDayPlan]
-      };
-      onCreated(finalEvent);
+      if (createdEvent) {
+        // Fresh creation
+        setCreatedDayPlan(updatedDayPlan);
+        const finalEvent: Event = {
+          ...createdEvent,
+          dayPlans: [updatedDayPlan]
+        };
+        onCreated(finalEvent);
+      } else {
+        // Editing existing day plan
+        // Since we don't have the full event, we'll create a minimal event object
+        const minimalEvent: Event = {
+          id: updated.eventId,
+          name: '', // We don't have this info
+          description: '',
+          organisationId: organizationId,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          dayPlans: [updatedDayPlan]
+        };
+        onCreated(minimalEvent);
+      }
     } catch (err) {
       console.error('Save schedule failed', err);
     }
@@ -675,7 +693,7 @@ const EventCreationWizard: React.FC<Props> = ({
                 <div style={{ width: '100%', maxWidth: '600px' }}>
                   <ScheduleManager
                     schedule={(createdDayPlan || editingDayPlan)?.scheduleItems || []}
-                    onSave={() => handleSaveSchedule((createdDayPlan || editingDayPlan)?.scheduleItems || [])}
+                    onSave={handleSaveSchedule}
                     onCancel={() => setStep(1)}
                   />
                 </div>
