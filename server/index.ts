@@ -48,8 +48,8 @@ const productionOrigins = [
   process.env.FRONTEND_HOST,
   "http://localhost:8080", // Local docker setup
   // Add your actual production domains here
-  "https://lu2adevelopment.de",
-  "https://www.lu2adevelopment.de"
+  "https://chaos-ops.de",
+  "https://www.chaos-ops.de"
 ].filter(Boolean); // Remove any undefined values
 
 const allowedOrigins = [...devOrigins, ...productionOrigins].filter((origin): origin is string => typeof origin === 'string' && !!origin);

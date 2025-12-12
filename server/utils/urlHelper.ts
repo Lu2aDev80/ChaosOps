@@ -19,7 +19,7 @@ export function getURLConfig(req?: Request): URLConfig {
 
   if (isProduction) {
     // Production: default to lu2adevelopment.de and the `/cahos-ops` base path
-    frontendHost = process.env.FRONTEND_HOST || 'https://lu2adevelopment.de';
+    frontendHost = process.env.FRONTEND_HOST || 'https://chaos-ops.de';
     // If no explicit APP_BASE_PATH provided, use `/cahos-ops` as the default
     if (!process.env.APP_BASE_PATH) {
       basePath = '/cahos-ops';

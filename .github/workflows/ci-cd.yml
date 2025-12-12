@@ -41,4 +41,4 @@ jobs:
         echo "✅ Image pushed to Docker Hub"
         echo "📦 Image: ${{ secrets.DOCKER_USERNAME }}/konfidayplaner:latest"
         echo "🔄 Watchtower on the server will automatically update the container within 5 minutes"
-        echo "🌐 URL: https://lu2adevelopment.de/cahos-ops/"
+        echo "🌐 URL: https://chaos-ops.de"
