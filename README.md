@@ -22,6 +22,114 @@ A modern web application for managing and displaying schedules for events and ga
 - **ORM**: Prisma 6
 - **Deployment**: Docker with Nginx
 
+## Local Development Setup
+
+This section guides you through setting up the development environment on your local machine.
+
+### Prerequisites
+
+- **Node.js 18+** and npm (or yarn/pnpm)
+- **Docker and Docker Compose** (for database and containerized deployment)
+- **Git** for version control
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/Lu2aDev80/KonfiDayPlaner.git
+cd KonfiDayPlaner
+```
+
+### 2. Install Dependencies
+
+Install all required Node.js dependencies:
+
+```bash
+npm install
+```
+
+This will also automatically generate the Prisma client via the `postinstall` script.
+
+### 3. Environment Configuration
+
+Set up your environment variables:
+
+```bash
+# Copy the example environment file
+cp .env.example .env
+
+# Edit .env with your local settings (database credentials, SMTP, etc.)
+# For local development, the default values should work out of the box
+```
+
+**Key environment variables for development:**
+- `DATABASE_URL`: PostgreSQL connection string
+- `NODE_ENV`: Set to `development`
+- `FRONTEND_URL`: Usually `http://localhost:5173` (auto-detected)
+- `LOG_LEVEL`: Set to `debug` for verbose logging
+
+### 4. Database Setup
+
+The application uses PostgreSQL with Prisma ORM. For local development, you can run PostgreSQL via Docker:
+
+```bash
+# Start PostgreSQL database
+docker-compose up -d postgres
+
+# Wait for the database to be healthy (check with docker-compose logs postgres)
+```
+
+Run database migrations and generate the Prisma client:
+
+```bash
+# Apply migrations to the database
+npm run db:migrate:dev
+
+# (Optional) Seed the database with initial data
+npm run db:seed
+```
+
+### 5. Start Development Servers
+
+You can run the frontend and backend together or separately:
+
+**Option A: Run both frontend and API simultaneously**
+```bash
+npm run dev:all
+```
+
+**Option B: Run separately**
+```bash
+# Terminal 1: Start the API server
+npm run api:dev
+
+# Terminal 2: Start the frontend development server
+npm run dev
+```
+
+### 6. Access the Application
+
+- **Frontend**: Open [http://localhost:5173](http://localhost:5173) in your browser
+- **API**: Available at [http://localhost:3000](http://localhost:3000)
+- **Database GUI**: Run `npm run db:studio` to open Prisma Studio
+
+### Development Workflow
+
+- **Hot Reload**: Both frontend and backend support hot reloading during development
+- **Database Changes**: When you modify `prisma/schema.prisma`, run `npm run db:migrate:dev`
+- **Linting**: Run `npm run lint` to check code quality
+- **Building**: Use `npm run build` to create a production build
+
+### Troubleshooting
+
+- **Database Connection Issues**: Ensure PostgreSQL is running with `docker-compose ps`
+- **Port Conflicts**: Check if ports 3000 (API) or 5173 (frontend) are available
+- **Environment Variables**: Verify your `.env` file has correct values
+- **Dependencies**: Run `npm install` again if you encounter module errors
+
+For more detailed troubleshooting, see the scripts in the root directory:
+- `health-check.ps1` (Windows)
+- `troubleshoot.sh` (Linux/Mac)
+
 ## Project Structure
 
 ```

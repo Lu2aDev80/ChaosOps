@@ -471,16 +471,16 @@
 /* Tape effect on sticky notes */
 .tape {
   position: absolute;
-  top: -18px;
+  top: -20px;
   left: 50%;
-  width: 60px;
-  height: 22px;
+  width: 65px;
+  height: 24px;
   background: repeating-linear-gradient(135deg, #fffbe7 0 8px, #fbbf24 8px 16px);
-  border-radius: 8px;
-  border: 2px solid #eab308;
-  box-shadow: 0 2px 6px #eab30844;
+  border-radius: 10px;
+  border: 3px solid #eab308;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
   transform: translateX(-50%) rotate(-4deg);
-  z-index: 2;
+  z-index: 10;
 }
 /* Playful accent colors for cards */
 /* Hand-drawn marker fill via pseudo element */

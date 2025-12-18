@@ -122,16 +122,16 @@ export const Modal: React.FC<ModalProps> = ({
         <div
           style={{
             position: 'absolute',
-            top: '-12px',
+            top: '-15px',
             left: '40%',
-            width: '50px',
-            height: '18px',
+            width: '60px',
+            height: '20px',
             background: `repeating-linear-gradient(135deg, #fffbe7 0 6px, ${getTypeColor()} 6px 12px)`,
-            borderRadius: '6px',
-            border: `2px solid ${getTypeColor()}`,
-            boxShadow: `0 2px 4px rgba(0,0,0,0.2)`,
-            transform: 'translateX(-50%) rotate(-2deg)',
-            zIndex: 2,
+            borderRadius: '8px',
+            border: `3px solid ${getTypeColor()}`,
+            boxShadow: `0 4px 8px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)`,
+            transform: 'translateX(-50%) rotate(-3deg)',
+            zIndex: 10,
           }}
         />
 

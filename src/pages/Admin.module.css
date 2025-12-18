@@ -245,16 +245,16 @@
 /* Tape effect on admin cards */
 .tape {
   position: absolute;
-  top: -12px;
+  top: -15px;
   left: 50%;
-  width: 45px;
-  height: 16px;
+  width: 55px;
+  height: 18px;
   background: repeating-linear-gradient(135deg, #fffbe7 0 6px, #fbbf24 6px 12px);
-  border-radius: 6px;
-  border: 1.5px solid #eab308;
-  box-shadow: 0 1px 4px #eab30844;
+  border-radius: 8px;
+  border: 2px solid #eab308;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.25), 0 1px 3px rgba(0,0,0,0.15);
   transform: translateX(-50%) rotate(-4deg);
-  z-index: 2;
+  z-index: 10;
 }
 
 .adminCard:nth-child(odd) .tape { transform: translateX(-50%) rotate(-3deg); }

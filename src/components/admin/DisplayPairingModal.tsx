@@ -224,11 +224,10 @@ const DisplayPairingModal: React.FC<DisplayPairingModalProps> = ({
           border: '3px solid #181818',
           maxWidth: '600px',
           width: '100%',
-          maxHeight: '90vh',
-          overflow: 'auto',
           position: 'relative',
           transform: 'rotate(-0.3deg)',
           animation: 'modalSlideIn 0.3s ease-out',
+          overflow: 'visible',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -236,18 +235,25 @@ const DisplayPairingModal: React.FC<DisplayPairingModalProps> = ({
         <div
           style={{
             position: 'absolute',
-            top: '-12px',
+            top: '-20px',
             left: '50%',
-            width: '50px',
-            height: '18px',
+            width: '60px',
+            height: '25px',
             background: 'repeating-linear-gradient(135deg, #fffbe7 0 6px, #8b5cf6 6px 12px)',
-            borderRadius: '6px',
-            border: '2px solid #8b5cf6',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-            transform: 'translateX(-50%) rotate(-2deg)',
-            zIndex: 2,
+            borderRadius: '8px',
+            border: '3px solid #8b5cf6',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)',
+            transform: 'translateX(-50%) rotate(-3deg)',
+            zIndex: 10000,
           }}
         />
+
+        <div
+          style={{
+            maxHeight: '90vh',
+            overflow: 'auto',
+          }}
+        >
 
         {/* Header */}
         <div
@@ -766,6 +772,8 @@ const DisplayPairingModal: React.FC<DisplayPairingModalProps> = ({
               </button>
             </div>
           )}
+        </div>
+
         </div>
       </div>
     </div>

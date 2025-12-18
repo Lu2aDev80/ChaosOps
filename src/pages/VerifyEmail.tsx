@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, XCircle, Mail, RefreshCw, ArrowLeft } from 'lucide-react';
 import FlipchartBackground from '../components/layout/FlipchartBackground';
+import { AlertModal } from '../components/ui';
 import styles from './Admin.module.css';
 
 interface VerificationResult {
@@ -29,6 +30,7 @@ const VerifyEmail: React.FC = () => {
   const [verifying, setVerifying] = useState(false);
   const [result, setResult] = useState<VerificationResult | null>(null);
   const [resending, setResending] = useState(false);
+  const [alertModal, setAlertModal] = useState<{ isOpen: boolean; title: string; message: string; type?: 'info' | 'success' | 'warning' | 'error' }>({ isOpen: false, title: '', message: '' });
 
   useEffect(() => {
     if (token) {
@@ -84,7 +86,12 @@ const VerifyEmail: React.FC = () => {
 
   const handleResendEmail = async () => {
     if (!result?.user?.email || !result?.organisation?.id) {
-      alert('Keine E-Mail-Adresse oder Organisation gefunden.');
+      setAlertModal({
+        isOpen: true,
+        title: 'Fehler',
+        message: 'Keine E-Mail-Adresse oder Organisation gefunden.',
+        type: 'error'
+      });
       return;
     }
 
@@ -103,12 +110,27 @@ const VerifyEmail: React.FC = () => {
 
       const data = await response.json();
       if (response.ok) {
-        alert('Bestätigungs-E-Mail wurde erneut gesendet!');
+        setAlertModal({
+          isOpen: true,
+          title: 'Erfolg',
+          message: 'Bestätigungs-E-Mail wurde erneut gesendet!',
+          type: 'success'
+        });
       } else {
-        alert(data.error || 'Fehler beim Senden der E-Mail');
+        setAlertModal({
+          isOpen: true,
+          title: 'Fehler',
+          message: data.error || 'Fehler beim Senden der E-Mail',
+          type: 'error'
+        });
       }
     } catch (error) {
-      alert('Verbindungsfehler beim Senden der E-Mail');
+      setAlertModal({
+        isOpen: true,
+        title: 'Fehler',
+        message: 'Verbindungsfehler beim Senden der E-Mail',
+        type: 'error'
+      });
     } finally {
       setResending(false);
     }
@@ -339,6 +361,14 @@ const VerifyEmail: React.FC = () => {
           </div>
         </div>
       </main>
+
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 };

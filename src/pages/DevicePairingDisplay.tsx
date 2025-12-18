@@ -4,6 +4,7 @@ import { PowerOff, RotateCcw, Settings, X } from 'lucide-react';
 import type { DayPlan } from '../types/schedule';
 import Planer from '../components/planner/Planer';
 import { api } from '../lib/api';
+import { ConfirmModal, AlertModal } from '../components/ui';
 
 interface StatusResponse {
   status: string;
@@ -28,6 +29,8 @@ const DevicePairingDisplay = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; title: string; message: string; onConfirm: () => void }>({ isOpen: false, title: '', message: '', onConfirm: () => {} });
+  const [alertModal, setAlertModal] = useState<{ isOpen: boolean; title: string; message: string; type?: 'info' | 'success' | 'warning' | 'error' }>({ isOpen: false, title: '', message: '' });
 
   // Load saved state from localStorage on mount
   useEffect(() => {
@@ -202,86 +205,113 @@ const DevicePairingDisplay = () => {
   const handleDisconnect = async () => {
     if (!deviceId) return;
     
-    if (!window.confirm('Sind Sie sicher, dass Sie dieses Display trennen möchten? Das Display wird von der Organisation getrennt.')) {
-      return;
-    }
-
-    setDisconnecting(true);
-    try {
-      await api.disconnectDisplay(deviceId);
-      
-      // Clear local storage
-      localStorage.removeItem('displayId');
-      localStorage.removeItem('displayPaired');
-      localStorage.removeItem('displayOrgId');
-      localStorage.removeItem('assignedDayPlan');
-      
-      // Reset state
-      setDeviceId('');
-      setIsPaired(false);
-      setAssignedDayPlan(null);
-      setPairingCode('');
-      setShowSettings(false);
-      
-      alert('Display erfolgreich getrennt.');
-    } catch (error: any) {
-      console.error('Failed to disconnect display:', error);
-      alert('Fehler beim Trennen des Displays. Bitte versuchen Sie es erneut.');
-    } finally {
-      setDisconnecting(false);
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Display trennen',
+      message: 'Sind Sie sicher, dass Sie dieses Display trennen möchten? Das Display wird von der Organisation getrennt.',
+      onConfirm: async () => {
+        setDisconnecting(true);
+        try {
+          await api.disconnectDisplay(deviceId);
+          
+          // Clear local storage
+          localStorage.removeItem('displayId');
+          localStorage.removeItem('displayPaired');
+          localStorage.removeItem('displayOrgId');
+          localStorage.removeItem('assignedDayPlan');
+          
+          // Reset state
+          setDeviceId('');
+          setIsPaired(false);
+          setAssignedDayPlan(null);
+          setPairingCode('');
+          setShowSettings(false);
+          
+          setAlertModal({
+            isOpen: true,
+            title: 'Erfolg',
+            message: 'Display erfolgreich getrennt.',
+            type: 'success'
+          });
+        } catch (error: any) {
+          console.error('Failed to disconnect display:', error);
+          setAlertModal({
+            isOpen: true,
+            title: 'Fehler',
+            message: 'Fehler beim Trennen des Displays. Bitte versuchen Sie es erneut.',
+            type: 'error'
+          });
+        } finally {
+          setDisconnecting(false);
+        }
+      }
+    });
   };
 
   const handleReset = async () => {
     if (!deviceId) return;
     
-    if (!window.confirm('Sind Sie sicher, dass Sie dieses Display zurücksetzen möchten? Alle Daten werden gelöscht und das Display muss neu gekoppelt werden.')) {
-      return;
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Display zurücksetzen',
+      message: 'Sind Sie sicher, dass Sie dieses Display zurücksetzen möchten? Alle Daten werden gelöscht und das Display muss neu gekoppelt werden.',
+      onConfirm: async () => {
+        setResetting(true);
+        try {
+          await api.resetDisplay(deviceId); // eslint-disable-line @typescript-eslint/no-unused-vars
+          
+          // Clear local storage
+          localStorage.removeItem('displayId');
+          localStorage.removeItem('displayPaired');
+          localStorage.removeItem('displayOrgId');
+          localStorage.removeItem('assignedDayPlan');
+          
+          // Instead of forcing immediate re-pairing, show the display as if the event ended
+          // by assigning a minimal day plan with a past date so the UI renders the 'ended' view.
+          const pastDate = new Date();
+          pastDate.setDate(pastDate.getDate() - 1);
 
-    setResetting(true);
-    try {
-      await api.resetDisplay(deviceId); // eslint-disable-line @typescript-eslint/no-unused-vars
-      
-      // Clear local storage
-      localStorage.removeItem('displayId');
-      localStorage.removeItem('displayPaired');
-      localStorage.removeItem('displayOrgId');
-      localStorage.removeItem('assignedDayPlan');
-      
-      // Instead of forcing immediate re-pairing, show the display as if the event ended
-      // by assigning a minimal day plan with a past date so the UI renders the 'ended' view.
-      const pastDate = new Date();
-      pastDate.setDate(pastDate.getDate() - 1);
+          setDeviceId('');
+          setPairingCode('');
+          setIsPaired(false);
+          setAssignedDayPlan({
+            name: 'Display zurückgesetzt',
+            date: pastDate.toISOString(),
+            scheduleItems: [],
+          } as any);
+          setShowSettings(false);
 
-      setDeviceId('');
-      setPairingCode('');
-      setIsPaired(false);
-      setAssignedDayPlan({
-        name: 'Display zurückgesetzt',
-        date: pastDate.toISOString(),
-        scheduleItems: [],
-      } as any);
-      setShowSettings(false);
-
-      alert('Display erfolgreich zurückgesetzt. Auf dem Display wird der Event-Status als beendet angezeigt.');
-    } catch (error: any) {
-      console.error('Failed to reset display:', error);
-      alert('Fehler beim Zurücksetzen des Displays. Bitte versuchen Sie es erneut.');
-    } finally {
-      setResetting(false);
-    }
+          setAlertModal({
+            isOpen: true,
+            title: 'Erfolg',
+            message: 'Display erfolgreich zurückgesetzt. Auf dem Display wird der Event-Status als beendet angezeigt.',
+            type: 'success'
+          });
+        } catch (error: any) {
+          console.error('Failed to reset display:', error);
+          setAlertModal({
+            isOpen: true,
+            title: 'Fehler',
+            message: 'Fehler beim Zurücksetzen des Displays. Bitte versuchen Sie es erneut.',
+            type: 'error'
+          });
+        } finally {
+          setResetting(false);
+        }
+      }
+    });
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'repeating-linear-gradient(0deg, #fffef0 0px, #fffef0 39px, #e5e7eb 40px, #fffef0 41px)',
-      padding: assignedDayPlan && eventStatus.status === 'running' ? '0' : '3rem 2rem',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: assignedDayPlan && eventStatus.status === 'running' ? 'stretch' : 'center',
-      justifyContent: assignedDayPlan && eventStatus.status === 'running' ? 'flex-start' : 'center',
+    <>
+      <div style={{
+        minHeight: '100vh',
+        background: 'repeating-linear-gradient(0deg, #fffef0 0px, #fffef0 39px, #e5e7eb 40px, #fffef0 41px)',
+        padding: assignedDayPlan && eventStatus.status === 'running' ? '0' : '3rem 2rem',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: assignedDayPlan && eventStatus.status === 'running' ? 'stretch' : 'center',
+        justifyContent: assignedDayPlan && eventStatus.status === 'running' ? 'flex-start' : 'center',
       position: 'relative'
     }}>
       <button
@@ -1252,6 +1282,24 @@ const DevicePairingDisplay = () => {
         </>
       )}
     </div>
+
+    <ConfirmModal
+      isOpen={confirmModal.isOpen}
+      onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+      onConfirm={confirmModal.onConfirm}
+      title={confirmModal.title}
+      message={confirmModal.message}
+      type="warning"
+    />
+
+    <AlertModal
+      isOpen={alertModal.isOpen}
+      onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+      title={alertModal.title}
+      message={alertModal.message}
+      type={alertModal.type}
+    />
+    </>
   );
 };
 

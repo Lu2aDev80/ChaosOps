@@ -25,7 +25,7 @@ import ScheduleManager from "../components/planner/ScheduleManager";
 import EventCreationWizard from "../components/forms/EventCreationWizard";
 import DisplayPairingModal from "../components/admin/DisplayPairingModal";
 import FlipchartBackground from "../components/layout/FlipchartBackground";
-import { ConfirmModal } from "../components/ui";
+import { ConfirmModal, AlertModal } from "../components/ui";
 import type { Event, DayPlan } from "../types/event";
 import type { ScheduleItem } from "../types/schedule";
 import styles from "./Admin.module.css";
@@ -59,6 +59,7 @@ const Dashboard: React.FC = () => {
     type: 'event' | 'dayPlan';
     id: string;
   }>({ isOpen: false, type: 'event', id: '' });
+  const [alertModal, setAlertModal] = useState<{ isOpen: boolean; title: string; message: string; type?: 'info' | 'success' | 'warning' | 'error' }>({ isOpen: false, title: '', message: '' });
 
   // Device pairing state
   const [showDevicePairingModal, setShowDevicePairingModal] = useState(false);
@@ -1147,7 +1148,12 @@ const Dashboard: React.FC = () => {
               nextItemTime={nextItemInfo?.time}
               onDelay={async (minutes) => {
                 if (!selectedEvent || !selectedEvent.dayPlans || selectedEvent.dayPlans.length === 0) {
-                  window.alert('Kein Tagesplan ausgewählt.');
+                  setAlertModal({
+                    isOpen: true,
+                    title: 'Fehler',
+                    message: 'Kein Tagesplan ausgewählt.',
+                    type: 'error'
+                  });
                   return;
                 }
 
@@ -1175,7 +1181,12 @@ const Dashboard: React.FC = () => {
                   });
 
                   if (!nextItem) {
-                    window.alert('Kein kommendes Element im Tagesplan gefunden.');
+                    setAlertModal({
+                      isOpen: true,
+                      title: 'Fehler',
+                      message: 'Kein kommendes Element im Tagesplan gefunden.',
+                      type: 'error'
+                    });
                     return;
                   }
 
@@ -2010,6 +2021,14 @@ const Dashboard: React.FC = () => {
         isOpen={showDevicePairingModal}
         onClose={() => setShowDevicePairingModal(false)}
         orgId={orgId || ''}
+      />
+
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
       />
     </div>
   );
