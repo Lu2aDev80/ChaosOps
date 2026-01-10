@@ -2,11 +2,6 @@ generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
 model Organisation {
   id               String            @id @default(uuid())
   name             String
@@ -191,8 +186,8 @@ model EventToEventTag {
   events     Event    @relation(fields: [A], references: [id], onDelete: Cascade)
   event_tags EventTag @relation(fields: [B], references: [id], onDelete: Cascade)
 
-  @@id([A, B], map: "_EventToEventTag_AB_pkey")
-  @@index([B], map: "_EventToEventTag_B_index")
+  @@id([A, B])
+  @@index([B])
   @@map("_EventToEventTag")
 }
 
@@ -202,8 +197,8 @@ model ScheduleItemToScheduleItemTag {
   schedule_items     ScheduleItem    @relation(fields: [A], references: [id], onDelete: Cascade)
   schedule_item_tags ScheduleItemTag @relation(fields: [B], references: [id], onDelete: Cascade)
 
-  @@id([A, B], map: "_ScheduleItemToScheduleItemTag_AB_pkey")
-  @@index([B], map: "_ScheduleItemToScheduleItemTag_B_index")
+  @@id([A, B])
+  @@index([B])
   @@map("_ScheduleItemToScheduleItemTag")
 }
 

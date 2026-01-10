@@ -4,7 +4,7 @@ import styles from './OrganisationCard.module.css';
 interface OrganisationCardProps {
   name: string;
   description?: string;
-  logoUrl?: string;
+  logoUrl?: string | null;
   selected?: boolean;
   onClick: () => void;
 }
