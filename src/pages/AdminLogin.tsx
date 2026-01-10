@@ -11,16 +11,16 @@ import { api } from "../lib/api";
 
 const AdminLogin: React.FC = () => {
   const navigate = useNavigate();
+  const [stage, setStage] = useState<"credentials" | "organisation">("credentials");
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
-  const [showLoginForm, setShowLoginForm] = useState(false);
   const [credentials, setCredentials] = useState({
     username: "",
     password: "",
   });
   const [orgs, setOrgs] = useState<
-    Array<{ id: string; name: string; description?: string; logoUrl?: string }>
+    Array<{ id: string; name: string; description?: string; logoUrl?: string | null; emailVerified?: boolean }>
   >([]);
-  const [loadingOrgs, setLoadingOrgs] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dbStatus, setDbStatus] = useState<{
     api: boolean;
@@ -62,122 +62,162 @@ const AdminLogin: React.FC = () => {
   };
 
   useEffect(() => {
-    const load = async () => {
+    const checkHealth = async () => {
       try {
-        setLoadingOrgs(true);
-        setDbStatus(prev => ({ ...prev, loading: true }));
-        
-        // Check API health
+        setDbStatus((prev) => ({ ...prev, loading: true }));
         await api.health();
-        
-        // Load organisations (tests DB connection)
-        const data = await api.organisations();
-        setOrgs(data);
-        
+
         setDbStatus({
           api: true,
           db: true,
           loading: false,
-          lastCheck: new Date().toLocaleTimeString('de-DE')
+          lastCheck: new Date().toLocaleTimeString("de-DE"),
         });
       } catch (e: any) {
-        setError(e.message ?? "Fehler beim Laden der Organisationen");
+        setError(e.message ?? "Fehler beim Prüfen der Verbindung");
         setDbStatus({
           api: false,
           db: false,
           loading: false,
-          lastCheck: new Date().toLocaleTimeString('de-DE')
+          lastCheck: new Date().toLocaleTimeString("de-DE"),
         });
-      } finally {
-        setLoadingOrgs(false);
       }
     };
-    load();
-    
-    // Check every 30 seconds
-    const interval = setInterval(async () => {
-      try {
-        await api.health();
-        setDbStatus(prev => ({
-          ...prev,
-          api: true,
-          lastCheck: new Date().toLocaleTimeString('de-DE')
-        }));
-      } catch {
-        setDbStatus(prev => ({
-          ...prev,
-          api: false,
-          lastCheck: new Date().toLocaleTimeString('de-DE')
-        }));
-      }
-    }, 30000);
-    
+
+    checkHealth();
+
+    const interval = setInterval(checkHealth, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  const handleOrganisationSelect = (orgId: string) => {
-    setSelectedOrgId(orgId);
+  const completeLogin = async (organisationId: string) => {
+    try {
+      const me = await api.me();
+      const userId = me.user.id;
+      const acceptedKey = `accepted_terms_${userId}`;
+      const accepted = localStorage.getItem(acceptedKey) === "true";
+
+      if (!accepted) {
+        const redirect = encodeURIComponent(`/admin/dashboard?org=${organisationId}`);
+        navigate(`/terms-accept?redirect=${redirect}&userId=${userId}`);
+        return;
+      }
+    } catch {
+      // If /me fails we still try to proceed to dashboard
+    }
+
+    navigate(`/admin/dashboard?org=${organisationId}`, { replace: true });
   };
 
-  const handleProceedToLogin = () => {
-    if (selectedOrgId) {
-      setShowLoginForm(true);
+  const handleCredentialSubmit = async (e: React.FormEvent | React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setError(null);
+    setLoading(true);
+
+    try {
+      const response = await api.login({
+        usernameOrEmail: credentials.username,
+        password: credentials.password,
+      });
+
+      if (response.requiresOrganisationSelection) {
+        setOrgs(response.organisations || []);
+        setStage("organisation");
+        setSelectedOrgId(null);
+        return;
+      }
+
+      if ("organisation" in response && response.organisation) {
+        setSelectedOrgId(response.organisation.id);
+        await completeLogin(response.organisation.id);
+      }
+    } catch (err: any) {
+      const errorMessage = err.message || "Login fehlgeschlagen";
+      const errorData = err.data || {};
+
+      if (errorMessage.includes("Email not verified")) {
+        const emailToUse =
+          errorData.email || (credentials.username.includes("@") ? credentials.username : null);
+
+        if (errorData.organisationId) {
+          setSelectedOrgId(errorData.organisationId);
+        }
+
+        openModal({
+          type: "confirm-resend",
+          title: "E-Mail nicht bestätigt",
+          message:
+            "Deine E-Mail-Adresse ist noch nicht bestätigt. Möchtest du eine neue Bestätigungs-E-Mail erhalten?",
+          alertType: "warning",
+          userEmail: emailToUse || undefined,
+        });
+      } else {
+        setError(errorMessage);
+        openModal({
+          type: "alert",
+          title: "Login fehlgeschlagen",
+          message: errorMessage,
+          alertType: "error",
+        });
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleLogin = async (e: React.FormEvent | React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleOrganisationLogin = async () => {
     if (!selectedOrgId) return;
+    setError(null);
+    setLoading(true);
+
     try {
-      await api.login({
+      const response = await api.login({
         organisationId: selectedOrgId,
         usernameOrEmail: credentials.username,
         password: credentials.password,
       });
 
-      // After successful login, ensure user accepted terms. Check via /auth/me and localStorage fallback.
-      try {
-        const me = await api.me();
-        const userId = me.user.id;
-        const acceptedKey = `accepted_terms_${userId}`;
-        const accepted = localStorage.getItem(acceptedKey) === 'true';
-        if (!accepted) {
-          // redirect to terms accept page with return location and userId
-          const redirect = encodeURIComponent(`/admin/dashboard?org=${selectedOrgId}`);
-          navigate(`/terms-accept?redirect=${redirect}&userId=${userId}`);
-          return;
-        }
-      } catch (err) {
-        // If me() fails, still proceed to dashboard
+      if (response.requiresOrganisationSelection) {
+        setError("Bitte wähle eine Organisation aus.");
+        return;
       }
 
-      navigate(`/admin/dashboard?org=${selectedOrgId}`, { replace: true });
+      if ("organisation" in response && response.organisation) {
+        await completeLogin(response.organisation.id);
+        setStage("credentials");
+      }
     } catch (err: any) {
       const errorMessage = err.message || "Login fehlgeschlagen";
       const errorData = err.data || {};
 
-      // Check if it's an email verification error
       if (errorMessage.includes("Email not verified")) {
-        // Use email from error response, or fallback to entered username if it's an email
-        const emailToUse = errorData.email || 
-                          (credentials.username.includes("@") ? credentials.username : null);
-        
+        const emailToUse =
+          errorData.email || (credentials.username.includes("@") ? credentials.username : null);
+
+        if (errorData.organisationId) {
+          setSelectedOrgId(errorData.organisationId);
+        }
+
         openModal({
-          type: 'confirm-resend',
-          title: 'E-Mail nicht bestätigt',
-          message: 'Deine E-Mail-Adresse ist noch nicht bestätigt. Möchtest du eine neue Bestätigungs-E-Mail erhalten?',
-          alertType: 'warning',
+          type: "confirm-resend",
+          title: "E-Mail nicht bestätigt",
+          message:
+            "Deine E-Mail-Adresse ist noch nicht bestätigt. Möchtest du eine neue Bestätigungs-E-Mail erhalten?",
+          alertType: "warning",
           userEmail: emailToUse || undefined,
         });
       } else {
+        setError(errorMessage);
         openModal({
-          type: 'alert',
-          title: 'Login fehlgeschlagen',
+          type: "alert",
+          title: "Login fehlgeschlagen",
           message: errorMessage,
-          alertType: 'error',
+          alertType: "error",
         });
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -324,7 +364,7 @@ const AdminLogin: React.FC = () => {
               Admin Bereich
             </h1>
 
-            {!showLoginForm && (
+            {stage === "credentials" && (
               <>
                 <img
                   src={loginGremlin}
@@ -346,12 +386,13 @@ const AdminLogin: React.FC = () => {
                     fontWeight: "500",
                   }}
                 >
-                  Wähle deine Organisation aus, um fortzufahren
+                  Melde dich zuerst mit deinen Zugangsdaten an. Falls du mehreren Organisationen angehörst,
+                  wählst du sie im nächsten Schritt aus.
                 </p>
               </>
             )}
 
-            {showLoginForm && selectedOrgId && (
+            {stage === "organisation" && (
               <p
                 style={{
                   fontFamily: '"Inter", "Roboto", Arial, sans-serif',
@@ -362,14 +403,158 @@ const AdminLogin: React.FC = () => {
                   fontWeight: "500",
                 }}
               >
-                Melde dich bei{" "}
-                {orgs.find((org) => org.id === selectedOrgId)?.name} an
+                Wähle die Organisation aus, bei der du dich anmelden möchtest.
               </p>
             )}
           </div>
         </div>
 
-        {!showLoginForm ? (
+        {stage === "credentials" ? (
+          /* Login Form */
+          <div
+            style={{
+              ...cardStyle,
+              transform: "rotate(-0.2deg)",
+              maxWidth: "500px",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                top: "-12px",
+                left: "70%",
+                width: "45px",
+                height: "16px",
+                background:
+                  "repeating-linear-gradient(135deg, #fffbe7 0 6px, #10b981 6px 12px)",
+                borderRadius: "6px",
+                border: "1.5px solid #059669",
+                boxShadow: "0 1px 4px rgba(5,150,105,0.3)",
+                transform: "translateX(-50%) rotate(3deg)",
+                zIndex: 2,
+              }}
+            />
+
+            <form
+              onSubmit={handleCredentialSubmit}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "1.5rem",
+              }}
+            >
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                    fontSize: "1rem",
+                    fontWeight: "600",
+                    color: "#0f172a",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  Benutzername oder E-Mail
+                </label>
+                <input
+                  type="text"
+                  value={credentials.username}
+                  onChange={(e) =>
+                    setCredentials({ ...credentials, username: e.target.value })
+                  }
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    border: "2px solid #374151",
+                    borderRadius: "8px",
+                    fontSize: "1rem",
+                    fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                    boxSizing: "border-box",
+                  }}
+                  placeholder="Dein Benutzername oder E-Mail"
+                />
+              </div>
+
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                    fontSize: "1rem",
+                    fontWeight: "600",
+                    color: "#0f172a",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  Passwort
+                </label>
+                <input
+                  type="password"
+                  value={credentials.password}
+                  onChange={(e) =>
+                    setCredentials({ ...credentials, password: e.target.value })
+                  }
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    border: "2px solid #374151",
+                    borderRadius: "8px",
+                    fontSize: "1rem",
+                    fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                    boxSizing: "border-box",
+                  }}
+                  placeholder="Dein Passwort"
+                />
+              </div>
+
+              {error && (
+                <div style={{ color: "#dc2626", fontWeight: 600 }}>{error}</div>
+              )}
+
+              <button
+                type="submit"
+                style={{
+                  ...buttonStyle,
+                  backgroundColor: "#10b981",
+                  color: "#fff",
+                  marginTop: "0.5rem",
+                  opacity: loading ? 0.85 : 1,
+                  cursor: loading ? "wait" : "pointer",
+                }}
+                disabled={loading}
+                onMouseEnter={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                    e.currentTarget.style.boxShadow = "3px 6px 0 #181818";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "2px 4px 0 #181818";
+                }}
+              >
+                <LogIn size={20} />
+                {loading ? "Wird geprüft…" : "Anmelden"}
+              </button>
+            </form>
+
+            <div style={{ marginTop: "1rem", textAlign: "center" }}>
+              <button
+                onClick={() => navigate("/signup")}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#2563eb",
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                  fontWeight: 700,
+                }}
+              >
+                Neue Organisation erstellen
+              </button>
+            </div>
+          </div>
+        ) : (
           /* Organisation Selection */
           <div
             style={{
@@ -426,13 +611,13 @@ const AdminLogin: React.FC = () => {
                 marginBottom: "1.5rem",
               }}
             >
-              {loadingOrgs && (
-                <div style={{ padding: "1rem", color: "#64748b" }}>
-                  Lade Organisationen…
-                </div>
-              )}
               {error && (
                 <div style={{ padding: "1rem", color: "#dc2626" }}>{error}</div>
+              )}
+              {!orgs.length && !error && (
+                <div style={{ padding: "1rem", color: "#64748b" }}>
+                  Keine passenden Organisationen gefunden. Bitte geh einen Schritt zurück und prüfe deine Zugangsdaten.
+                </div>
               )}
               {orgs.map((org) => (
                 <button
@@ -440,7 +625,7 @@ const AdminLogin: React.FC = () => {
                   style={
                     selectedOrgId === org.id ? selectedOrgStyle : orgButtonStyle
                   }
-                  onClick={() => handleOrganisationSelect(org.id)}
+                  onClick={() => setSelectedOrgId(org.id)}
                   onMouseEnter={(e) => {
                     if (selectedOrgId !== org.id) {
                       e.currentTarget.style.transform = "translateY(-2px)";
@@ -480,7 +665,6 @@ const AdminLogin: React.FC = () => {
                           flexShrink: 0,
                         }}
                         onError={(e) => {
-                          // Fallback to Users icon if image fails
                           e.currentTarget.style.display = "none";
                           const userIcon =
                             e.currentTarget.parentElement?.querySelector(
@@ -547,13 +731,13 @@ const AdminLogin: React.FC = () => {
                 ...buttonStyle,
                 backgroundColor: selectedOrgId ? "#10b981" : "#9ca3af",
                 color: "#fff",
-                cursor: selectedOrgId ? "pointer" : "not-allowed",
+                cursor: selectedOrgId && !loading ? "pointer" : "not-allowed",
                 opacity: selectedOrgId ? 1 : 0.6,
               }}
-              disabled={!selectedOrgId}
-              onClick={handleProceedToLogin}
+              disabled={!selectedOrgId || loading}
+              onClick={handleOrganisationLogin}
               onMouseEnter={(e) => {
-                if (selectedOrgId) {
+                if (selectedOrgId && !loading) {
                   e.currentTarget.style.transform = "translateY(-2px)";
                   e.currentTarget.style.boxShadow = "3px 6px 0 #181818";
                 }
@@ -566,147 +750,14 @@ const AdminLogin: React.FC = () => {
               }}
             >
               <LogIn size={20} />
-              Weiter zum Login
+              {loading ? "Anmeldung läuft…" : "Bei Organisation anmelden"}
             </button>
 
-            <div style={{ marginTop: "1rem", textAlign: "center" }}>
-              <button
-                onClick={() => navigate("/signup")}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "#2563eb",
-                  textDecoration: "underline",
-                  cursor: "pointer",
-                  fontWeight: 700,
-                }}
-              >
-                Neue Organisation erstellen
-              </button>
-            </div>
-          </div>
-        ) : (
-          /* Login Form */
-          <div
-            style={{
-              ...cardStyle,
-              transform: "rotate(-0.2deg)",
-              maxWidth: "500px",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                top: "-12px",
-                left: "70%",
-                width: "45px",
-                height: "16px",
-                background:
-                  "repeating-linear-gradient(135deg, #fffbe7 0 6px, #10b981 6px 12px)",
-                borderRadius: "6px",
-                border: "1.5px solid #059669",
-                boxShadow: "0 1px 4px rgba(5,150,105,0.3)",
-                transform: "translateX(-50%) rotate(3deg)",
-                zIndex: 2,
-              }}
-            />
-
-            <form
-              onSubmit={handleLogin}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "1.5rem",
-              }}
-            >
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                    fontSize: "1rem",
-                    fontWeight: "600",
-                    color: "#0f172a",
-                    marginBottom: "0.5rem",
-                  }}
-                >
-                  Benutzername
-                </label>
-                <input
-                  type="text"
-                  value={credentials.username}
-                  onChange={(e) =>
-                    setCredentials({ ...credentials, username: e.target.value })
-                  }
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "2px solid #374151",
-                    borderRadius: "8px",
-                    fontSize: "1rem",
-                    fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                    boxSizing: "border-box",
-                  }}
-                  placeholder="Dein Benutzername"
-                />
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                    fontSize: "1rem",
-                    fontWeight: "600",
-                    color: "#0f172a",
-                    marginBottom: "0.5rem",
-                  }}
-                >
-                  Passwort
-                </label>
-                <input
-                  type="password"
-                  value={credentials.password}
-                  onChange={(e) =>
-                    setCredentials({ ...credentials, password: e.target.value })
-                  }
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "2px solid #374151",
-                    borderRadius: "8px",
-                    fontSize: "1rem",
-                    fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                    boxSizing: "border-box",
-                  }}
-                  placeholder="Dein Passwort"
-                />
-              </div>
-
-              <button
-                type="submit"
-                style={{
-                  ...buttonStyle,
-                  backgroundColor: "#10b981",
-                  color: "#fff",
-                  marginTop: "0.5rem",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.boxShadow = "3px 6px 0 #181818";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "2px 4px 0 #181818";
-                }}
-              >
-                <LogIn size={20} />
-                Anmelden
-              </button>
-            </form>
-
             <button
-              onClick={() => setShowLoginForm(false)}
+              onClick={() => {
+                setStage("credentials");
+                setSelectedOrgId(null);
+              }}
               style={{
                 padding: "0.5rem 1rem",
                 border: "none",
@@ -719,7 +770,7 @@ const AdminLogin: React.FC = () => {
                 width: "100%",
               }}
             >
-              ← Zurück zur Organisationsauswahl
+              ← Zugangsdaten ändern
             </button>
           </div>
         )}
@@ -789,8 +840,6 @@ const AdminLogin: React.FC = () => {
               setDbStatus((prev) => ({ ...prev, loading: true }));
               try {
                 await api.health();
-                const data = await api.organisations();
-                setOrgs(data);
                 setDbStatus({
                   api: true,
                   db: true,

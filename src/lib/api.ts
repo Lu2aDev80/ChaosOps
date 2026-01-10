@@ -3,7 +3,7 @@ import type { Event } from '../types/event';
 import type { DayPlan } from '../types/schedule';
 import type { Tag } from '../types/tag';
 
-export type Organisation = { id: string; name: string; description?: string; logoUrl?: string }
+export type Organisation = { id: string; name: string; description?: string; logoUrl?: string | null }
 export type User = {
   id: string;
   username: string;
@@ -19,10 +19,24 @@ export type SignupResponse = {
   user: Pick<User, "id" | "username" | "role" | "email" | "emailVerified">;
   message: string;
 };
-export type LoginResponse = {
-  organisation: Pick<Organisation, "id" | "name">;
-  user: Pick<User, "id" | "username" | "role" | "email" | "emailVerified">;
+export type LoginOrganisationOption = {
+  id: string;
+  name: string;
+  description?: string;
+  logoUrl?: string | null;
+  emailVerified?: boolean;
 };
+
+export type LoginResponse =
+  | {
+      requiresOrganisationSelection: true;
+      organisations: LoginOrganisationOption[];
+    }
+  | {
+      requiresOrganisationSelection?: false;
+      organisation: Pick<Organisation, "id" | "name">;
+      user: Pick<User, "id" | "username" | "role" | "email" | "emailVerified">;
+    };
 export type LogoutResponse = { ok: boolean };
 export type VerifyEmailResponse = {
   message: string;
@@ -160,9 +174,9 @@ export const api = {
     });
   },
   login(data: {
-    organisationId: string;
     usernameOrEmail: string;
     password: string;
+    organisationId?: string;
   }): Promise<LoginResponse> {
     return json<LoginResponse>("/auth/login", {
       method: "POST",

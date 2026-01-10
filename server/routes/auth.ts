@@ -170,34 +170,64 @@ router.post("/signup", async (req, res) => {
 
 router.post("/login", async (req, res) => {
   const { organisationId, usernameOrEmail, password } = req.body ?? {};
-  if (!organisationId || !usernameOrEmail || !password) {
+  if (!usernameOrEmail || !password) {
     return res.status(400).json({ error: "Missing required fields" });
   }
+
   try {
-    const org = await prisma.organisation.findUnique({
-      where: { id: organisationId },
-    });
-    if (!org) return res.status(404).json({ error: "Organisation not found" });
-
-    const user = await prisma.user.findFirst({
+    const users = await prisma.user.findMany({
       where: {
-        organisationId,
         OR: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
+        ...(organisationId ? { organisationId } : {}),
       },
+      include: { organisation: true },
     });
-    if (!user) return res.status(401).json({ error: "Invalid credentials" });
 
-    const ok = await bcrypt.compare(password, user.passwordHash);
-    if (!ok) return res.status(401).json({ error: "Invalid credentials" });
+    if (!users.length) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
 
-    // Only require email verification if email is enabled
+    const matchingUsers: typeof users = [];
+    for (const candidate of users) {
+      const ok = await bcrypt.compare(password, candidate.passwordHash);
+      if (ok) matchingUsers.push(candidate);
+    }
+
+    if (!matchingUsers.length) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    if (!organisationId && matchingUsers.length > 1) {
+      const organisations = matchingUsers.map((user) => ({
+        id: user.organisation.id,
+        name: user.organisation.name,
+        description: user.organisation.description,
+        logoUrl: user.organisation.logoUrl,
+        emailVerified: user.emailVerified,
+      }));
+
+      return res.json({
+        requiresOrganisationSelection: true,
+        organisations,
+      });
+    }
+
+    const user = organisationId
+      ? matchingUsers.find((candidate) => candidate.organisationId === organisationId)
+      : matchingUsers[0];
+
+    if (!user) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
     if (!user.emailVerified && isEmailEnabled()) {
       return res.status(403).json({
         error: "Email not verified",
         message: "Please verify your email address before logging in.",
         canResendVerification: true,
         userId: user.id,
-        email: user.email, // Include email so frontend can use it for resend
+        email: user.email,
+        organisationId: user.organisationId,
       });
     }
 
@@ -205,7 +235,7 @@ router.post("/login", async (req, res) => {
     setSessionCookie(res, token, expiresAt);
 
     res.json({
-      organisation: { id: org.id, name: org.name },
+      organisation: { id: user.organisation.id, name: user.organisation.name },
       user: {
         id: user.id,
         username: user.username,
@@ -213,6 +243,7 @@ router.post("/login", async (req, res) => {
         role: user.role,
         emailVerified: user.emailVerified,
       },
+      requiresOrganisationSelection: false,
     });
   } catch (err) {
     logger.error("login error", err);
