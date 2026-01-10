@@ -4,6 +4,7 @@ services:
     container_name: konfidayplaner-postgres
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+      - "com.centurylinklabs.watchtower.scope=konfidayplaner"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-konfiadmin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-konfi2024secure}
@@ -28,6 +29,7 @@ services:
     container_name: konfidayplaner-api
     labels:
       - "com.centurylinklabs.watchtower.enable=false"
+      - "com.centurylinklabs.watchtower.scope=konfidayplaner"
     depends_on:
       postgres:
         condition: service_healthy
@@ -56,6 +58,7 @@ services:
     container_name: konfidayplaner-app
     labels:
       - "com.centurylinklabs.watchtower.enable=false"
+      - "com.centurylinklabs.watchtower.scope=konfidayplaner"
     depends_on:
       api:
         condition: service_healthy
@@ -68,8 +71,10 @@ services:
 
   watchtower:
     image: containrrr/watchtower
+    container_name: konfidayplaner-watchtower
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+      - "com.centurylinklabs.watchtower.scope=konfidayplaner"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
@@ -78,6 +83,10 @@ services:
       - WATCHTOWER_INCLUDE_RESTARTING=true
       - WATCHTOWER_INCLUDE_STOPPED=false
       - WATCHTOWER_LABEL_ENABLE=true
+      - WATCHTOWER_DEBUG=false
+      - WATCHTOWER_LOG_LEVEL=info
+      - WATCHTOWER_SCOPE=konfidayplaner
+      - WATCHTOWER_MONITOR_ONLY=true
     restart: unless-stopped
     networks:
       - app-network
