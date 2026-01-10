@@ -59,7 +59,7 @@ const DisplayPairingModal: React.FC<DisplayPairingModalProps> = ({
     }
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || '/cahos-ops/api';
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
       const response = await fetch(
         `${apiUrl}/displays/pairing/${pairedDeviceId}/dayplan`,
         {
@@ -92,7 +92,7 @@ const DisplayPairingModal: React.FC<DisplayPairingModalProps> = ({
     setError('');
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || '/cahos-ops/api';
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
       const response = await fetch(`${apiUrl}/displays/pairing/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

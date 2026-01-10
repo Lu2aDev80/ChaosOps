@@ -207,7 +207,7 @@ export function renderTestEmail(recipientName?: string): string {
           Diese E-Mail wurde automatisch von Chaos Ops versendet.
         </mj-text>
         <mj-text align="center" color="#64748b" font-size="12px" padding="4px 0" font-family="'Inter', 'Roboto', Arial, sans-serif">
-          © 2025 Lu2a Development | Chaos Ops
+          © 2026 Lu2a Development | Chaos Ops
         </mj-text>
         <mj-text align="center" padding="10px 0 0 0">
           <a href="https://lu2adevelopment.de/cahos-ops" style="color: #2563eb; text-decoration: none; font-weight: 600; font-family: 'Inter', 'Roboto', Arial, sans-serif;">

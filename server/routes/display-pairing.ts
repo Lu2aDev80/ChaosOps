@@ -81,6 +81,37 @@ router.get('/displays/pairing/status/:deviceId', async (req: Request, res: Respo
       return res.status(404).json({ error: 'Display not found' });
     }
 
+    // If display has an organisation, verify it still exists
+    if (display.organisationId && display.status === DeviceStatus.PAIRED) {
+      const organisation = await prisma.organisation.findUnique({
+        where: { id: display.organisationId }
+      });
+
+      // If organisation was deleted, reset the display
+      if (!organisation) {
+        logger.warn(`Organisation ${display.organisationId} for display ${deviceId} no longer exists. Resetting display.`);
+        const resetDisplay = await prisma.display.update({
+          where: { id: deviceId },
+          data: {
+            organisationId: null,
+            status: DeviceStatus.PENDING,
+            currentDayPlanId: null,
+            isActive: false
+          }
+        });
+        
+        return res.json({
+          status: resetDisplay.status,
+          isPaired: false,
+          organisationId: null,
+          deviceName: resetDisplay.name,
+          dayPlan: null,
+          wasReset: true,
+          resetReason: 'Organisation no longer exists'
+        });
+      }
+    }
+
     // If display has a day plan assigned, fetch it separately
     let dayPlan = null;
     if (display.currentDayPlanId) {
@@ -92,6 +123,15 @@ router.get('/displays/pairing/status/:deviceId', async (req: Request, res: Respo
           }
         }
       });
+
+      // If day plan was deleted, clear it from display
+      if (!dayPlan) {
+        logger.warn(`DayPlan ${display.currentDayPlanId} for display ${deviceId} no longer exists. Clearing assignment.`);
+        await prisma.display.update({
+          where: { id: deviceId },
+          data: { currentDayPlanId: null }
+        });
+      }
     }
 
     res.json({
@@ -118,6 +158,16 @@ router.post('/displays/pairing/register', async (req: Request, res: Response) =>
       return res.status(400).json({ 
         error: 'Missing required fields: pairingCode and organisationId are required' 
       });
+    }
+
+    // Verify organisation exists first
+    const organisation = await prisma.organisation.findUnique({
+      where: { id: organisationId }
+    });
+
+    if (!organisation) {
+      logger.warn(`Display registration failed: Organisation ${organisationId} not found`);
+      return res.status(404).json({ error: 'Organisation not found' });
     }
 
     // Find display by pairing code
@@ -188,12 +238,49 @@ router.put('/displays/pairing/:displayId/dayplan', async (req: Request, res: Res
       return res.status(400).json({ error: 'dayPlanId is required' });
     }
 
+    // Verify display exists and has organization
+    const display = await prisma.display.findUnique({
+      where: { id: displayId }
+    });
+
+    if (!display) {
+      return res.status(404).json({ error: 'Display not found' });
+    }
+
+    if (!display.organisationId) {
+      return res.status(400).json({ error: 'Display must be paired with an organisation first' });
+    }
+
+    // Verify the organisation still exists
+    const organisation = await prisma.organisation.findUnique({
+      where: { id: display.organisationId }
+    });
+
+    if (!organisation) {
+      logger.warn(`Organisation ${display.organisationId} for display ${displayId} no longer exists. Resetting display.`);
+      await prisma.display.update({
+        where: { id: displayId },
+        data: {
+          organisationId: null,
+          status: DeviceStatus.PENDING,
+          currentDayPlanId: null,
+          isActive: false
+        }
+      });
+      return res.status(400).json({ error: 'Display organisation no longer exists. Display has been reset.' });
+    }
+
     // Verify the DayPlan exists
     const dayPlan = await prisma.dayPlan.findUnique({
       where: { id: dayPlanId },
       include: {
         scheduleItems: {
           orderBy: { position: 'asc' }
+        },
+        event: {
+          select: {
+            organisationId: true
+          }
         }
       }
     });
@@ -201,6 +288,12 @@ router.put('/displays/pairing/:displayId/dayplan', async (req: Request, res: Res
     if (!dayPlan) {
       logger.error(`DayPlan ${dayPlanId} not found`);
       return res.status(404).json({ error: 'DayPlan not found' });
+    }
+
+    // Verify day plan belongs to the same organisation as the display
+    if (dayPlan.event.organisationId !== display.organisationId) {
+      logger.error(`DayPlan ${dayPlanId} belongs to different organisation than display ${displayId}`);
+      return res.status(403).json({ error: 'DayPlan must belong to the same organisation as the display' });
     }
 
     // Update display with dayPlanId
@@ -306,6 +399,67 @@ router.post('/displays/pairing/:displayId/reset', async (req: Request, res: Resp
 
   } catch (error) {
     logger.error('Error resetting display:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/displays/pairing/cleanup
+// Cleanup displays without valid organisations (admin utility)
+router.post('/displays/pairing/cleanup', async (req: Request, res: Response) => {
+  try {
+    // Find all displays with organisationId set
+    const displaysWithOrg = await prisma.display.findMany({
+      where: {
+        organisationId: { not: null }
+      },
+      include: {
+        organisation: true
+      }
+    });
+
+    const orphanedDisplays = displaysWithOrg.filter(d => !d.organisation);
+    
+    if (orphanedDisplays.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No orphaned displays found',
+        cleaned: 0
+      });
+    }
+
+    // Reset all orphaned displays
+    const resetResults = await Promise.all(
+      orphanedDisplays.map(async (display) => {
+        try {
+          await prisma.display.update({
+            where: { id: display.id },
+            data: {
+              organisationId: null,
+              status: DeviceStatus.PENDING,
+              currentDayPlanId: null,
+              isActive: false
+            }
+          });
+          logger.info(`Cleaned up orphaned display: ${display.id} (was linked to deleted org ${display.organisationId})`);
+          return { id: display.id, success: true };
+        } catch (error) {
+          logger.error(`Failed to clean up display ${display.id}:`, error);
+          return { id: display.id, success: false, error: String(error) };
+        }
+      })
+    );
+
+    const successCount = resetResults.filter(r => r.success).length;
+
+    res.json({
+      success: true,
+      message: `Cleaned up ${successCount} orphaned display(s)`,
+      cleaned: successCount,
+      details: resetResults
+    });
+
+  } catch (error) {
+    logger.error('Error during display cleanup:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

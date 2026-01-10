@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Monitor, Trash2, Edit2, X, Check } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Monitor, Trash2, Edit2, X, Check, PowerOff } from 'lucide-react';
 import type { Display } from '../../types/display';
 
 interface DisplayManagerProps {
@@ -29,8 +29,18 @@ const DisplayManager: React.FC<DisplayManagerProps> = ({ organisationId }) => {
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [changingPlan, setChangingPlan] = useState(false);
   const [dayPlanMap, setDayPlanMap] = useState<Map<string, { name: string; eventName: string }>>(new Map());
+  const [autoRefresh] = useState<boolean>(true);
+  const refreshTimerRef = useRef<number | null>(null);
+  const lastFetchRef = useRef<number>(0);
 
   const fetchDisplays = useCallback(async () => {
+    // Throttle requests - don't fetch more than once every 5 seconds
+    const now = Date.now();
+    if (now - lastFetchRef.current < 5000) {
+      return;
+    }
+    lastFetchRef.current = now;
+
     setLoading(true);
     setError(null);
     try {
@@ -62,7 +72,7 @@ const DisplayManager: React.FC<DisplayManagerProps> = ({ organisationId }) => {
   const loadEvents = useCallback(async () => {
     setLoadingEvents(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || '/cahos-ops/api';
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
       const response = await fetch(`${apiUrl}/organisations/${organisationId}/events`, {
         credentials: 'include'
       });
@@ -99,8 +109,21 @@ const DisplayManager: React.FC<DisplayManagerProps> = ({ organisationId }) => {
     if (organisationId) {
       fetchDisplays();
       loadEvents();
+
+      // Auto-refresh every 30 seconds if enabled
+      if (autoRefresh) {
+        refreshTimerRef.current = window.setInterval(() => {
+          fetchDisplays();
+        }, 30000);
+      }
+
+      return () => {
+        if (refreshTimerRef.current) {
+          clearInterval(refreshTimerRef.current);
+        }
+      };
     }
-  }, [organisationId, fetchDisplays, loadEvents]);
+  }, [organisationId, fetchDisplays, loadEvents, autoRefresh]);
 
   const handleDeactivateDisplay = async (displayId: string) => {
     if (!window.confirm('Sind Sie sicher, dass Sie dieses Display deaktivieren und löschen möchten?')) {
@@ -108,7 +131,7 @@ const DisplayManager: React.FC<DisplayManagerProps> = ({ organisationId }) => {
     }
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || '/cahos-ops/api';
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
       const response = await fetch(`${apiUrl}/displays/${displayId}`, {
         method: 'DELETE',
         credentials: 'include'
@@ -123,6 +146,30 @@ const DisplayManager: React.FC<DisplayManagerProps> = ({ organisationId }) => {
       setError(null);
     } catch (err: any) {
       setError(err.message || 'Fehler beim Deaktivieren des Displays');
+      setSuccess(null);
+    }
+  };
+
+  const handleDisconnectDisplay = async (displayId: string) => {
+    if (!window.confirm('Dieses Display von der Organisation trennen?')) {
+      return;
+    }
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
+      const response = await fetch(`${apiUrl}/displays/pairing/${displayId}/disconnect`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+
+      if (!response.ok) throw new Error('Failed to disconnect display');
+
+      // Remove from active list immediately (will be inactive/unassigned after disconnect)
+      setDisplays(prev => prev.filter(d => d.id !== displayId));
+      setSuccess('Display erfolgreich getrennt');
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || 'Fehler beim Trennen des Displays');
       setSuccess(null);
     }
   };
@@ -147,7 +194,7 @@ const DisplayManager: React.FC<DisplayManagerProps> = ({ organisationId }) => {
     setError(null);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || '/cahos-ops/api';
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
       const response = await fetch(`${apiUrl}/displays/pairing/${displayId}/dayplan`, {
         method: 'PUT',
         headers: {
@@ -305,6 +352,38 @@ const DisplayManager: React.FC<DisplayManagerProps> = ({ organisationId }) => {
                 </div>
                 
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    onClick={() => handleDisconnectDisplay(display.id)}
+                    style={{
+                      padding: "0.5rem 1rem",
+                      border: "2px solid #f59e0b",
+                      borderRadius: "8px",
+                      fontSize: "0.875rem",
+                      fontWeight: "600",
+                      fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      transition: "all 0.2s ease",
+                      backgroundColor: "#fff",
+                      color: "#f59e0b",
+                      boxShadow: "2px 4px 0 #fde68a"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '3px 6px 0 #fde68a';
+                      e.currentTarget.style.backgroundColor = '#fffbeb';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '2px 4px 0 #fde68a';
+                      e.currentTarget.style.backgroundColor = '#fff';
+                    }}
+                    title="Display trennen"
+                  >
+                    <PowerOff size={16} />
+                  </button>
                   <button
                     onClick={() => handleStartEditPlan(display.id, display.currentDayPlanId)}
                     style={{

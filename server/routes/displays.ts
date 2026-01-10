@@ -179,6 +179,28 @@ router.get('/displays/:displayId', async (req, res) => {
       return res.status(404).json({ error: 'Display not found' })
     }
 
+    // Check if organisation still exists, reset if not
+    if (display.organisationId && !display.organisation) {
+      console.warn(`Display ${displayId} linked to non-existent organisation ${display.organisationId}. Resetting.`)
+      const resetDisplay = await prisma.display.update({
+        where: { id: displayId },
+        data: {
+          organisationId: null,
+          isActive: false,
+          currentDayPlanId: null,
+        },
+        include: { organisation: true },
+      })
+      
+      // Update last seen
+      await prisma.display.update({
+        where: { id: displayId },
+        data: { lastSeenAt: new Date() },
+      })
+
+      return res.json(resetDisplay)
+    }
+
     // Update last seen
     await prisma.display.update({
       where: { id: displayId },
@@ -198,9 +220,30 @@ router.patch('/displays/:displayId', requireAuth, async (req: AuthRequest, res) 
     const { displayId } = req.params
     const { name, currentDayPlanId, isActive } = req.body
 
-    const display = await prisma.display.findUnique({ where: { id: displayId } })
+    const display = await prisma.display.findUnique({ 
+      where: { id: displayId },
+      include: { organisation: true }
+    })
+    
     if (!display) {
       return res.status(404).json({ error: 'Display not found' })
+    }
+
+    // Check if organisation still exists, reset if not
+    if (display.organisationId && !display.organisation) {
+      console.warn(`Display ${displayId} linked to non-existent organisation. Resetting.`)
+      const resetDisplay = await prisma.display.update({
+        where: { id: displayId },
+        data: {
+          organisationId: null,
+          isActive: false,
+          currentDayPlanId: null,
+        },
+      })
+      return res.status(400).json({ 
+        error: 'Display organisation no longer exists. Display has been reset.',
+        display: resetDisplay
+      })
     }
 
     if (req.user!.organisationId !== display.organisationId) {

@@ -110,7 +110,7 @@ export function invitationEmail(
       <mj-column>
         <mj-divider border-color="#cbd5e1" border-width="1px" padding="15px 0" />
         <mj-text align="center" color="#64748b" font-size="12px" padding="8px 0">Diese E-Mail wurde automatisch vom Chaos Ops Team gesendet.</mj-text>
-        <mj-text align="center" color="#64748b" font-size="12px" padding="4px 0">© 2025 Lu2a Development | Chaos Ops</mj-text>
+        <mj-text align="center" color="#64748b" font-size="12px" padding="4px 0">© 2026 Lu2a Development | Chaos Ops</mj-text>
         <mj-text align="center" padding="10px 0 0 0">
           <a href="https://chaos-ops.de" style="color: #2563eb; text-decoration: none; font-weight: 600;">chaos-ops.de</a>
         </mj-text>

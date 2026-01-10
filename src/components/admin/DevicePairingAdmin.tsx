@@ -76,7 +76,7 @@ const DevicePairingAdmin: React.FC<DevicePairingAdminProps> = ({ onSuccess, orgI
     setError(null);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || '/cahos-ops/api';
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
       const response = await fetch(`${apiUrl}/displays/pairing/register`, {
         method: 'POST',
         headers: {
@@ -126,7 +126,7 @@ const DevicePairingAdmin: React.FC<DevicePairingAdminProps> = ({ onSuccess, orgI
     setError(null);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || '/cahos-ops/api';
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
       const response = await fetch(`${apiUrl}/displays/pairing/${pairedDevice.id}/dayplan`, {
         method: 'PUT',
         headers: {

@@ -178,7 +178,7 @@ model Display {
   pairingCode      String?       @unique
   socketId         String?
   status           DeviceStatus  @default(PENDING)
-  organisation     Organisation? @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  organisation     Organisation? @relation(fields: [organisationId], references: [id], onDelete: SetNull)
 
   @@map("displays")
 }
