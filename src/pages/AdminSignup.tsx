@@ -148,12 +148,6 @@ const AdminSignup: React.FC = () => {
               zIndex: 1,
             }}
           >
-            <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
-              <label style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                <input type="checkbox" checked={acceptedTerms} onChange={e => setAcceptedTerms(e.target.checked)} />
-                <span style={{ fontFamily: 'Inter, Roboto, sans-serif' }}>Ich akzeptiere die <a href="/agb" target="_blank" rel="noopener noreferrer">AGB</a> und die <a href="/dsgvo" target="_blank" rel="noopener noreferrer">Datenschutzerklärung</a>.</span>
-              </label>
-            </div>
             {/* Tape */}
             <div className={styles.tape} />
             
