@@ -6,8 +6,11 @@ WORKDIR /usr/src/app
 # Copy package files
 COPY package*.json ./
 
-# Copy Prisma schema first (needed for postinstall hook from package.json)
+# Copy Prisma schema and config (needed for postinstall hook from package.json)
 COPY prisma ./prisma
+
+# Set a dummy DATABASE_URL for build time (Prisma Client generation doesn't need a real DB)
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 
 # Install ALL dependencies (including devDependencies for build)
 # This will run postinstall which generates Prisma Client
