@@ -6,7 +6,8 @@ import prisma from '../../src/services/db'
 import { logger } from '../logger'
 import { sendMail, isEmailEnabled, sendMailSafe } from "../mailer";
 import { renderVerificationEmail } from "../templates/verificationEmail";
-import { generateVerificationURL } from "../utils/urlHelper";
+import { renderPasswordResetEmail } from "../templates/passwordResetEmail";
+import { generateVerificationURL, generatePasswordResetURL } from "../utils/urlHelper";
 
 const router = Router();
 
@@ -256,6 +257,107 @@ router.post("/logout", async (req, res) => {
   if (token) await prisma.session.delete({ where: { token } }).catch(() => {});
   res.clearCookie("sid", { path: "/" });
   res.json({ ok: true });
+});
+
+// Request password reset
+router.post("/request-password-reset", async (req, res) => {
+  const { usernameOrEmail, organisationId } = req.body ?? {};
+  if (!usernameOrEmail) {
+    return res.status(400).json({ error: "Username or email required" });
+  }
+
+  try {
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
+        ...(organisationId ? { organisationId } : {}),
+      },
+      include: { organisation: true },
+    });
+
+    if (!users.length) {
+      // Don't reveal existence
+      return res.json({ message: "If an account exists, a reset email will be sent." });
+    }
+
+    if (!organisationId && users.length > 1) {
+      const organisations = users.map((u) => ({
+        id: u.organisation.id,
+        name: u.organisation.name,
+        description: u.organisation.description,
+        logoUrl: u.organisation.logoUrl,
+        emailVerified: u.emailVerified,
+      }));
+      return res.json({ requiresOrganisationSelection: true, organisations });
+    }
+
+    const user = organisationId ? users.find((u) => u.organisationId === organisationId) : users[0];
+    if (!user) {
+      return res.json({ message: "If an account exists, a reset email will be sent." });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const expiresAt = dayjs().add(1, "hour").toDate();
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordResetToken: resetToken, passwordResetExpires: expiresAt },
+    });
+
+    if (!isEmailEnabled()) {
+      // Email disabled; don't send, but respond success generically
+      return res.json({ message: "If an account exists, a reset email will be sent." });
+    }
+
+    const resetURL = generatePasswordResetURL(resetToken, req);
+    const emailHtml = renderPasswordResetEmail(user.username, resetURL);
+    const sent = await sendMailSafe({ to: user.email, subject: "Passwort zurücksetzen - Chaos Ops", html: emailHtml });
+
+    if (sent) {
+      return res.json({ message: "If an account exists, a reset email will be sent." });
+    }
+    return res.status(503).json({ error: "Email service temporarily unavailable" });
+  } catch (err) {
+    logger.error("request-password-reset error", err);
+    res.status(500).json({ error: "Internal error" });
+  }
+});
+
+// Reset password with token
+router.post("/reset-password", async (req, res) => {
+  const { token, newPassword } = req.body ?? {};
+  if (!token || !newPassword) {
+    return res.status(400).json({ error: "Token and new password are required" });
+  }
+  if (typeof newPassword !== "string" || newPassword.length < 6) {
+    return res.status(400).json({ error: "Password must be at least 6 characters" });
+  }
+
+  try {
+    const user = await prisma.user.findFirst({ where: { passwordResetToken: token } });
+    if (!user) {
+      return res.status(404).json({ error: "Invalid or expired reset token" });
+    }
+    if (user.passwordResetExpires && dayjs().isAfter(user.passwordResetExpires)) {
+      // Clear expired token
+      await prisma.user.update({ where: { id: user.id }, data: { passwordResetToken: null, passwordResetExpires: null } });
+      return res.status(410).json({ error: "Reset token expired" });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: user.id },
+        data: { passwordHash, passwordResetToken: null, passwordResetExpires: null },
+      });
+      // Invalidate existing sessions
+      await tx.session.deleteMany({ where: { userId: user.id } });
+    });
+
+    res.json({ success: true, message: "Password updated successfully" });
+  } catch (err) {
+    logger.error("reset-password error", err);
+    res.status(500).json({ error: "Internal error" });
+  }
 });
 
 // Verify email with token

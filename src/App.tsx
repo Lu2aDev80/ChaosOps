@@ -11,6 +11,8 @@ import OrganisationSettings from "./pages/OrganisationSettings";
 import Documentation from "./pages/Documentation";
 import VerifyEmail from "./pages/VerifyEmail";
 import AcceptInvitation from "./pages/AcceptInvitation";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 
 import Footer from "./components/ui/Footer";
@@ -36,6 +38,8 @@ function App() {
           <Route path="/login" element={<AdminLogin />} />
           <Route path="/signup" element={<AdminSignup />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/accept-invitation" element={<AcceptInvitation />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/dashboard" element={<Dashboard />} />

@@ -538,19 +538,71 @@ const AdminLogin: React.FC = () => {
               </button>
             </form>
 
-            <div style={{ marginTop: "1rem", textAlign: "center" }}>
+            <div
+              style={{
+                marginTop: "1rem",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: "0.75rem",
+                flexWrap: "wrap",
+              }}
+            >
               <button
                 onClick={() => navigate("/signup")}
                 style={{
-                  background: "none",
-                  border: "none",
-                  color: "#2563eb",
-                  textDecoration: "underline",
-                  cursor: "pointer",
+                  padding: "0.6rem 1rem",
+                  border: "2px solid #374151",
+                  borderRadius: "8px",
+                  fontSize: "0.95rem",
                   fontWeight: 700,
+                  fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                  backgroundColor: "#f1f5f9",
+                  color: "#0f172a",
+                  cursor: "pointer",
+                  boxShadow: "2px 4px 0 #374151",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = "3px 6px 0 #374151";
+                  e.currentTarget.style.backgroundColor = "#e2e8f0";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "2px 4px 0 #374151";
+                  e.currentTarget.style.backgroundColor = "#f1f5f9";
                 }}
               >
                 Neue Organisation erstellen
+              </button>
+
+              <button
+                onClick={() => navigate("/forgot-password")}
+                style={{
+                  padding: "0.6rem 1rem",
+                  border: "2px dashed #374151",
+                  borderRadius: "8px",
+                  fontSize: "0.95rem",
+                  fontWeight: 700,
+                  fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                  backgroundColor: "transparent",
+                  color: "#2563eb",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "#0f172a";
+                  e.currentTarget.style.backgroundColor = "#f1f5f9";
+                  e.currentTarget.style.borderColor = "#0f172a";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "#2563eb";
+                  e.currentTarget.style.backgroundColor = "transparent";
+                  e.currentTarget.style.borderColor = "#374151";
+                }}
+              >
+                Passwort vergessen?
               </button>
             </div>
           </div>

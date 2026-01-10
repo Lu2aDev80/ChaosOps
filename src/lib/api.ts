@@ -38,6 +38,10 @@ export type LoginResponse =
       user: Pick<User, "id" | "username" | "role" | "email" | "emailVerified">;
     };
 export type LogoutResponse = { ok: boolean };
+export type RequestPasswordResetResponse =
+  | { requiresOrganisationSelection: true; organisations: LoginOrganisationOption[] }
+  | { message: string };
+export type ResetPasswordResponse = { success: boolean; message: string };
 export type VerifyEmailResponse = {
   message: string;
   user: Pick<User, "id" | "username" | "email" | "role" | "emailVerified">;
@@ -182,6 +186,20 @@ export const api = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
+    });
+  },
+  requestPasswordReset(data: { usernameOrEmail: string; organisationId?: string }): Promise<RequestPasswordResetResponse> {
+    return json<RequestPasswordResetResponse>("/auth/request-password-reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+  },
+  resetPassword(token: string, newPassword: string): Promise<ResetPasswordResponse> {
+    return json<ResetPasswordResponse>("/auth/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, newPassword }),
     });
   },
   logout(): Promise<LogoutResponse> {
