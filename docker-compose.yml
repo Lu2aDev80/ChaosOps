@@ -39,8 +39,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-konfiadmin}:${POSTGRES_PASSWORD:-konfi2024secure}@postgres:5432/${POSTGRES_DB:-konfidayplaner}?schema=public
       PORT: 3000
       DEBUG: "socket.io*"
-    ports:
-      - '3000:3000'
+    # Removed external port mapping - now accessed through reverse proxy
     restart: on-failure:3
     networks:
       - app-network
@@ -63,8 +62,24 @@ services:
       api:
         condition: service_healthy
     # Frontend does not need to wait for DB/API; Nginx can start independently
+    # Removed external port mapping - now accessed through reverse proxy
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  reverse-proxy:
+    image: nginx:alpine
+    container_name: konfidayplaner-proxy
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+      - "com.centurylinklabs.watchtower.scope=konfidayplaner"
+    depends_on:
+      - app
+      - api
+    volumes:
+      - ./nginx-proxy.conf:/etc/nginx/conf.d/default.conf
     ports:
-      - '8080:80'
+      - '80:80'
     restart: unless-stopped
     networks:
       - app-network

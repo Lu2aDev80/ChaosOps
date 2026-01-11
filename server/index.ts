@@ -49,7 +49,9 @@ const productionOrigins = [
   "http://localhost:8080", // Local docker setup
   // Add your actual production domains here
   "https://chaos-ops.de",
-  "https://www.chaos-ops.de"
+  "http://chaos-ops.de",  // Allow HTTP for current setup
+  "https://www.chaos-ops.de",
+  "http://www.chaos-ops.de"
 ].filter(Boolean); // Remove any undefined values
 
 const allowedOrigins = [...devOrigins, ...productionOrigins].filter((origin): origin is string => typeof origin === 'string' && !!origin);
