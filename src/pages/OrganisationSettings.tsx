@@ -15,6 +15,7 @@ import {
 import FlipchartBackground from '../components/layout/FlipchartBackground';
 import { ConfirmModal } from '../components/ui';
 import DisplayManager from '../components/admin/DisplayManager';
+import OrganisationSharedPlans from '../components/admin/OrganisationSharedPlans';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import styles from './Admin.module.css';
@@ -942,6 +943,11 @@ const OrganisationSettings: React.FC = () => {
         {/* Display Management */}
         {isAdmin && orgId && (
             <DisplayManager organisationId={orgId} />
+        )}
+
+        {/* Shared Plans Management */}
+        {isAdmin && orgId && (
+            <OrganisationSharedPlans organisationId={orgId} />
         )}
 
         

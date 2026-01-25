@@ -90,3 +90,9 @@ html {
   scrollbar-width: thin;
   scrollbar-color: #fbbf24 #fffbe7;
 }
+
+/* Spin animation for loading states */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

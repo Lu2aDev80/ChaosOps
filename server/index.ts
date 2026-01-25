@@ -12,6 +12,7 @@ import uploadRoutes from './routes/upload';
 import tagsRoutes from './routes/tags';
 import displayPairingRoutes from './routes/display-pairing';
 import displaysRoutes from './routes/displays';
+import sharedPlansRoutes from './routes/shared-plans';
 import { logger } from "./logger";
 import { testConnection, isEmailEnabled } from "./mailer";
 import { validateURLGeneration } from "./utils/urlHelper";
@@ -105,6 +106,7 @@ app.use(`${apiBase}/upload`, uploadRoutes);
 app.use(`${apiBase}`, tagsRoutes);
 app.use(`${apiBase}`, displayPairingRoutes);
 app.use(`${apiBase}`, displaysRoutes);
+app.use(`${apiBase}`, sharedPlansRoutes);
 
 // Test SMTP connection on startup (non-blocking)
 async function testEmailOnStartup() {

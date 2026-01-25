@@ -13,6 +13,7 @@ import VerifyEmail from "./pages/VerifyEmail";
 import AcceptInvitation from "./pages/AcceptInvitation";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import SharedPlanView from "./pages/SharedPlanView";
 
 
 import Footer from "./components/ui/Footer";
@@ -45,6 +46,7 @@ function App() {
           <Route path="/admin/dashboard" element={<Dashboard />} />
           <Route path="/admin/settings" element={<OrganisationSettings />} />
           <Route path="/planner" element={<PlannerPage />} />
+          <Route path="/share/:token" element={<SharedPlanView />} />
           <Route path="/impressum" element={<Impressum />} />
           <Route path="/agb" element={<AGB />} />
           <Route path="/dsgvo" element={<DSGVO />} />

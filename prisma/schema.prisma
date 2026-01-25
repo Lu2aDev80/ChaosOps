@@ -47,6 +47,7 @@ model DayPlan {
   updatedAt     DateTime       @updatedAt
   event         Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
   scheduleItems ScheduleItem[]
+  sharedPlans   SharedPlan[]
 
   @@map("day_plans")
 }
@@ -105,6 +106,7 @@ model User {
   createdAt              DateTime     @default(now())
   updatedAt              DateTime     @updatedAt
   sessions               Session[]
+  sharedPlans            SharedPlan[]
   organisation           Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
   @@unique([organisationId, username])
@@ -183,6 +185,25 @@ model Display {
   organisation     Organisation? @relation(fields: [organisationId], references: [id], onDelete: SetNull)
 
   @@map("displays")
+}
+
+model SharedPlan {
+  id          String   @id @default(uuid())
+  dayPlanId   String
+  shareToken  String   @unique
+  title       String?
+  description String?
+  isActive    Boolean  @default(true)
+  expiresAt   DateTime?
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  viewCount   Int      @default(0)
+  lastViewAt  DateTime?
+  dayPlan     DayPlan  @relation(fields: [dayPlanId], references: [id], onDelete: Cascade)
+  creator     User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@map("shared_plans")
 }
 
 model EventToEventTag {

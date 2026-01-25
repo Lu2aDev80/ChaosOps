@@ -18,12 +18,14 @@ import {
   ChevronDown,
   ChevronRight,
   Filter,
+  Share2,
 } from "lucide-react";
 import EventForm from "../components/forms/EventForm";
 import DayPlanForm from "../components/forms/DayPlanForm";
 import ScheduleManager from "../components/planner/ScheduleManager";
 import EventCreationWizard from "../components/forms/EventCreationWizard";
 import DisplayPairingModal from "../components/admin/DisplayPairingModal";
+import SharedPlansManager from "../components/admin/SharedPlansManager";
 import FlipchartBackground from "../components/layout/FlipchartBackground";
 import { ConfirmModal, AlertModal } from "../components/ui";
 import type { Event, DayPlan } from "../types/event";
@@ -54,6 +56,7 @@ const Dashboard: React.FC = () => {
   const [managingSchedule, setManagingSchedule] = useState<DayPlan | null>(
     null
   );
+  const [sharingDayPlan, setSharingDayPlan] = useState<DayPlan | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{
     isOpen: boolean;
     type: 'event' | 'dayPlan';
@@ -468,6 +471,56 @@ const Dashboard: React.FC = () => {
         onSave={handleSaveSchedule}
         onCancel={() => setManagingSchedule(null)}
       />
+    );
+  }
+
+  // Show Sharing Manager
+  if (sharingDayPlan) {
+    return (
+      <div className={styles.adminWrapper} role="main" aria-label="Plan teilen">
+        <FlipchartBackground />
+        <main className={styles.adminContent}>
+          <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
+            <div className="mb-6">
+              <button
+                onClick={() => setSharingDayPlan(null)}
+                style={{
+                  background: '#f1f5f9',
+                  border: '2px solid #181818',
+                  borderRadius: '8px',
+                  fontWeight: 600,
+                  fontSize: '1rem',
+                  padding: '0.5rem 1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  boxShadow: '2px 4px 0 #181818',
+                  cursor: 'pointer',
+                  marginBottom: '2rem'
+                }}
+              >
+                <span style={{fontSize: '1.2em', lineHeight: 1}}>&larr;</span>
+                Zurück zum Dashboard
+              </button>
+              <h1 style={{ 
+                fontSize: '2rem', 
+                fontWeight: 'bold', 
+                marginBottom: '0.5rem',
+                color: '#1f2937'
+              }}>
+                Plan teilen: {sharingDayPlan.name}
+              </h1>
+              <p style={{ color: '#6b7280', fontSize: '1.1rem' }}>
+                Erstellen und verwalten Sie geteilte Links für diesen Plan
+              </p>
+            </div>
+            <SharedPlansManager
+              dayPlanId={sharingDayPlan.id}
+              dayPlanName={sharingDayPlan.name}
+            />
+          </div>
+        </main>
+      </div>
     );
   }
 
@@ -1921,6 +1974,34 @@ const Dashboard: React.FC = () => {
                               title="Vorschau"
                             >
                               <Eye size={16} strokeWidth={2} />
+                            </button>
+                            <button
+                              onClick={() => setSharingDayPlan(dayPlan)}
+                              style={{
+                                padding: "0.5rem",
+                                border: "2px solid #8b5cf6",
+                                borderRadius: "6px",
+                                backgroundColor: "#faf5ff",
+                                color: "#8b5cf6",
+                                cursor: "pointer",
+                                transition: "all 0.2s ease",
+                                boxShadow: "1px 2px 0 #8b5cf6",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  "#f3e8ff";
+                                e.currentTarget.style.transform =
+                                  "translateY(-1px)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  "#faf5ff";
+                                e.currentTarget.style.transform =
+                                  "translateY(0)";
+                              }}
+                              title="Plan teilen"
+                            >
+                              <Share2 size={16} strokeWidth={2} />
                             </button>
                             <button
                               onClick={() => {
