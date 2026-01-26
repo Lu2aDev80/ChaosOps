@@ -219,42 +219,96 @@ const LivePlanControl: React.FC<LivePlanControlProps> = ({
   console.log("Render - displays.length:", displays.length, "displayCount:", displayCount, "isConnected:", isConnected);
 
   // Render a compact quick-action bar that attaches a delay to the next upcoming item.
+  const hasNextItem = nextItemTitle && nextItemTime;
+  const canApplyDelay = selectedDayPlanId && hasNextItem;
+
   return (
-    <div style={{ ...cardStyle, padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <Clock size={20} color="#f59e0b" />
-          <div style={{ fontWeight: 700, color: '#374151' }}>Quick Delay</div>
+    <div style={{ 
+      ...cardStyle, 
+      padding: '1rem 1.25rem', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'space-between',
+      gap: '1rem',
+      background: canApplyDelay ? '#fffbeb' : '#f8fafc',
+      border: canApplyDelay ? '2px solid #f59e0b' : '2px solid #e2e8f0',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', flex: 1, minWidth: 0 }}>
+        <div style={{
+          width: 42,
+          height: 42,
+          borderRadius: '10px',
+          background: canApplyDelay ? '#fef3c7' : '#f1f5f9',
+          border: canApplyDelay ? '2px solid #fbbf24' : '2px solid #cbd5e1',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          <Clock size={22} color={canApplyDelay ? '#d97706' : '#94a3b8'} />
         </div>
-        {nextItemTitle && nextItemTime && (
-          <div style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 500 }}>
-            Nächste Aktion: {nextItemTime} - {nextItemTitle}
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0 }}>
+          <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.95rem' }}>
+            Verzögerung hinzufügen
           </div>
-        )}
-        {!nextItemTitle && selectedDayPlanId && (
-          <div style={{ fontSize: '0.8rem', color: '#ef4444', fontWeight: 500 }}>
-            Keine kommende Aktion gefunden
-          </div>
-        )}
+          
+          {hasNextItem ? (
+            <div style={{ 
+              fontSize: '0.85rem', 
+              color: '#475569', 
+              fontWeight: 500,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}>
+              <span style={{ color: '#059669', fontWeight: 600 }}>▶</span> {nextItemTime} – {nextItemTitle}
+            </div>
+          ) : selectedDayPlanId ? (
+            <div style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 500 }}>
+              Alle Aktionen abgeschlossen
+            </div>
+          ) : (
+            <div style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 500 }}>
+              Wähle zuerst einen Tagesplan aus
+            </div>
+          )}
+        </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
         {[5, 10, 20].map((m) => (
           <button
             key={m}
             onClick={() => onDelay(m)}
-            disabled={!selectedDayPlanId}
+            disabled={!canApplyDelay}
             style={{
-              padding: '0.5rem 0.9rem',
+              padding: '0.55rem 0.85rem',
               borderRadius: '8px',
-              border: '2px solid #181818',
-              background: '#fef3c7',
-              color: '#374151',
+              border: canApplyDelay ? '2px solid #b45309' : '2px solid #cbd5e1',
+              background: canApplyDelay ? 'linear-gradient(to bottom, #fcd34d, #fbbf24)' : '#f1f5f9',
+              color: canApplyDelay ? '#78350f' : '#94a3b8',
               fontWeight: 700,
-              cursor: selectedDayPlanId ? 'pointer' : 'not-allowed',
-              opacity: selectedDayPlanId ? 1 : 0.5,
+              fontSize: '0.9rem',
+              cursor: canApplyDelay ? 'pointer' : 'not-allowed',
+              boxShadow: canApplyDelay ? '0 2px 4px rgba(180, 83, 9, 0.2)' : 'none',
+              transition: 'all 0.15s ease',
             }}
-            title={selectedDayPlanId ? `+${m} Minuten zur nächsten Aktion` : 'Kein Tagesplan ausgewählt'}
+            title={canApplyDelay 
+              ? `Verschiebe nächste Aktion um ${m} Minuten nach hinten` 
+              : hasNextItem 
+                ? 'Kein Tagesplan ausgewählt' 
+                : 'Keine kommende Aktion vorhanden'}
+            onMouseEnter={(e) => {
+              if (canApplyDelay) {
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 4px 8px rgba(180, 83, 9, 0.25)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = canApplyDelay ? '0 2px 4px rgba(180, 83, 9, 0.2)' : 'none';
+            }}
           >
             +{m} Min
           </button>

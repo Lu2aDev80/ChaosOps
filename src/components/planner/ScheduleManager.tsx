@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Clock, Save, X, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Clock, Save, X, Edit2, ChevronUp, ChevronDown, GripVertical, MapPin, User, Timer, Coffee, Check, FileText, Gamepad2, Megaphone, ArrowRight, Wrench, PauseCircle } from 'lucide-react';
 import type { ScheduleItem } from '../../types/schedule';
 import styles from '../../pages/Admin.module.css';
+import FlipchartBackground from '../layout/FlipchartBackground';
 
 interface ScheduleManagerProps {
   schedule: ScheduleItem[];
@@ -9,14 +10,48 @@ interface ScheduleManagerProps {
   onCancel: () => void;
 }
 
+// Type badge colors for visual distinction
+const typeColors: Record<string, { bg: string; border: string; text: string }> = {
+  session: { bg: '#dbeafe', border: '#3b82f6', text: '#1e40af' },
+  workshop: { bg: '#fae8ff', border: '#d946ef', text: '#86198f' },
+  break: { bg: '#dcfce7', border: '#22c55e', text: '#166534' },
+  game: { bg: '#fef3c7', border: '#f59e0b', text: '#92400e' },
+  announcement: { bg: '#fee2e2', border: '#ef4444', text: '#991b1b' },
+  transition: { bg: '#f1f5f9', border: '#64748b', text: '#334155' },
+};
+
+// Type icons using Lucide components
+const typeIcons: Record<string, React.ReactNode> = {
+  session: <FileText size={14} />,
+  workshop: <Wrench size={14} />,
+  break: <PauseCircle size={14} />,
+  game: <Gamepad2 size={14} />,
+  announcement: <Megaphone size={14} />,
+  transition: <ArrowRight size={14} />,
+};
+
+const typeLabels: Record<string, string> = {
+  session: 'Session',
+  workshop: 'Workshop',
+  break: 'Pause',
+  game: 'Spiel',
+  announcement: 'Ansage',
+  transition: 'Übergang',
+};
+
 const ScheduleManager: React.FC<ScheduleManagerProps> = ({ schedule, onSave, onCancel }) => {
   const [items, setItems] = useState<ScheduleItem[]>(schedule);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [expandedSections, setExpandedSections] = useState<Record<number, boolean>>({});
 
   // Keep local items in sync if parent passes a different schedule prop
   useEffect(() => {
     setItems(schedule || []);
   }, [schedule]);
+
+  const toggleSection = (index: number) => {
+    setExpandedSections(prev => ({ ...prev, [index]: !prev[index] }));
+  };
 
   const addScheduleItem = () => {
     const newItem: ScheduleItem = {
@@ -74,430 +109,676 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ schedule, onSave, onC
   };
 
   return (
-    <div style={{ 
-      width: '100%', 
-      maxWidth: '600px',
-      margin: '0 1rem'
-    }}>
-      <div className={styles.adminCard} style={{ width: '100%' }}>
-        <div className={styles.tape} aria-hidden="true"></div>
-        
-        <h2 className={styles.cardTitle}>
-          <Clock size={20} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
-          Termine verwalten
-        </h2>
+    <div className={styles.adminWrapper} role="main" aria-label="Termine verwalten">
+      <FlipchartBackground />
+      <main className={styles.adminContent}>
+        <div style={{ 
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          padding: '2rem 1rem',
+        }}>
+          <div style={{ 
+            width: '100%', 
+            maxWidth: '700px',
+          }}>
+            <div className={styles.adminCard} style={{ width: '100%' }}>
+              <div className={styles.tape} aria-hidden="true"></div>
+              
+              <h2 className={styles.cardTitle}>
+                <Clock size={20} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
+                Termine verwalten
+              </h2>
 
-        <div className={styles.cardContent}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            
-            {/* Schedule Items Header */}
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center'
-            }}>
-              <label style={{ 
-                fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
-                fontSize: '1rem',
-                fontWeight: '600',
-                color: '#181818'
-              }}>
-                Termine ({items.length})
-              </label>
-              <button
-                type="button"
-                onClick={addScheduleItem}
-                style={{
-                  padding: '0.5rem 1rem',
-                  border: '2px solid #181818',
-                  borderRadius: '6px',
-                  fontSize: '0.9rem',
-                  fontWeight: '600',
-                  fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                  backgroundColor: '#d9fdd2',
-                  color: '#181818',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#a6f3a6';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#d9fdd2';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                <Plus size={16} />
-                Termin
-              </button>
-            </div>
+              <div className={styles.cardContent}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  
+                  {/* Schedule Items Header */}
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    padding: '0.75rem 1rem',
+                    background: '#f8fafc',
+                    borderRadius: '10px',
+                    border: '1px solid #e2e8f0',
+                  }}>
+                    <div>
+                      <span style={{ 
+                        fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
+                        fontSize: '1.1rem',
+                        fontWeight: '600',
+                        color: '#1e293b'
+                      }}>
+                        Zeitplan
+                      </span>
+                      <span style={{
+                        marginLeft: '0.5rem',
+                        padding: '0.2rem 0.6rem',
+                        background: '#e0f2fe',
+                        color: '#0369a1',
+                        borderRadius: '999px',
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                      }}>
+                        {items.length} {items.length === 1 ? 'Termin' : 'Termine'}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={addScheduleItem}
+                      style={{
+                        padding: '0.6rem 1rem',
+                        border: '2px solid #059669',
+                        borderRadius: '8px',
+                        fontSize: '0.9rem',
+                        fontWeight: '700',
+                        fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                        backgroundColor: '#10b981',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 2px 4px rgba(16, 185, 129, 0.25)',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#059669';
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                        e.currentTarget.style.boxShadow = '0 4px 8px rgba(16, 185, 129, 0.3)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = '#10b981';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(16, 185, 129, 0.25)';
+                      }}
+                    >
+                      <Plus size={18} />
+                      Neuer Termin
+                    </button>
+                  </div>
 
-            {/* Schedule Items List */}
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: '0.5rem',
-              maxHeight: '350px',
-              overflowY: 'auto'
-            }}>
-              {items.length === 0 ? (
-                <div style={{
-                  padding: '2rem 1rem',
-                  textAlign: 'center',
-                  color: '#9ca3af',
-                  fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                  fontSize: '0.9rem'
-                }}>
-                  Noch keine Termine hinzugefügt
-                </div>
+                  {/* Schedule Items List */}
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '0.75rem',
+                    padding: '0.25rem',
+                  }}>
+                    {items.length === 0 ? (
+                      <div style={{
+                        padding: '3rem 1.5rem',
+                        textAlign: 'center',
+                        background: '#f8fafc',
+                        borderRadius: '12px',
+                        border: '2px dashed #cbd5e1',
+                      }}>
+                        <div style={{
+                          width: '56px',
+                          height: '56px',
+                          margin: '0 auto 1rem',
+                          background: '#e0f2fe',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}>
+                          <Clock size={28} color="#0284c7" />
+                        </div>
+                        <div style={{
+                          color: '#475569',
+                          fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                          fontSize: '1rem',
+                          fontWeight: 600,
+                          marginBottom: '0.5rem',
+                        }}>
+                          Noch keine Termine
+                        </div>
+                        <div style={{
+                          color: '#94a3b8',
+                          fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                          fontSize: '0.9rem',
+                        }}>
+                          Klicke auf "Neuer Termin" um deinen ersten Programmpunkt hinzuzufügen.
+                        </div>
+                      </div>
               ) : (
-                items.map((item, index) => (
+                items.map((item, index) => {
+                  const colors = typeColors[item.type] || typeColors.session;
+                  const isExpanded = expandedSections[index];
+                  
+                  return (
                   <div key={index}>
                     {editingIndex === index ? (
-                      // Editing Mode
+                      // Editing Mode - Clean card layout
                       <div style={{
-                        padding: '0.75rem',
-                        border: '2px solid #181818',
-                        borderRadius: '6px',
-                        backgroundColor: '#fff',
+                        padding: '1.25rem',
+                        border: '2px solid #3b82f6',
+                        borderRadius: '12px',
+                        backgroundColor: '#f8fafc',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '0.5rem'
+                        gap: '1rem',
+                        boxShadow: '0 4px 12px rgba(59, 130, 246, 0.15)',
                       }}>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <input
-                            type="time"
-                            value={item.time}
-                            onChange={(e) => updateScheduleItem(index, { time: e.target.value })}
+                        {/* Header Row - Essential info */}
+                        <div style={{ 
+                          display: 'grid', 
+                          gridTemplateColumns: '100px 1fr 140px', 
+                          gap: '0.75rem',
+                          alignItems: 'center'
+                        }}>
+                          <div>
+                            <label style={{ 
+                              display: 'block', 
+                              fontSize: '0.7rem', 
+                              fontWeight: 600, 
+                              color: '#64748b',
+                              marginBottom: '0.25rem',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.05em'
+                            }}>Uhrzeit</label>
+                            <input
+                              type="time"
+                              value={item.time}
+                              onChange={(e) => updateScheduleItem(index, { time: e.target.value })}
+                              style={{
+                                width: '100%',
+                                padding: '0.6rem',
+                                border: '2px solid #e2e8f0',
+                                borderRadius: '8px',
+                                fontSize: '0.95rem',
+                                fontWeight: 600,
+                                fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                                background: '#fff',
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ 
+                              display: 'block', 
+                              fontSize: '0.7rem', 
+                              fontWeight: 600, 
+                              color: '#64748b',
+                              marginBottom: '0.25rem',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.05em'
+                            }}>Titel</label>
+                            <input
+                              type="text"
+                              value={item.title}
+                              onChange={(e) => updateScheduleItem(index, { title: e.target.value })}
+                              placeholder="z.B. Begrüßung & Vorstellung"
+                              autoFocus
+                              style={{
+                                width: '100%',
+                                padding: '0.6rem',
+                                border: '2px solid #e2e8f0',
+                                borderRadius: '8px',
+                                fontSize: '0.95rem',
+                                fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                                background: '#fff',
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ 
+                              display: 'block', 
+                              fontSize: '0.7rem', 
+                              fontWeight: 600, 
+                              color: '#64748b',
+                              marginBottom: '0.25rem',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.05em'
+                            }}>Typ</label>
+                            <select
+                              value={item.type}
+                              onChange={(e) => updateScheduleItem(index, { type: e.target.value as any })}
+                              style={{
+                                width: '100%',
+                                padding: '0.6rem',
+                                border: '2px solid #e2e8f0',
+                                borderRadius: '8px',
+                                fontSize: '0.9rem',
+                                fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                                background: '#fff',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              <option value="session">Session</option>
+                              <option value="workshop">Workshop</option>
+                              <option value="break">Pause</option>
+                              <option value="game">Spiel</option>
+                              <option value="announcement">Ansage</option>
+                              <option value="transition">Übergang</option>
+                            </select>
+                          </div>
+                        </div>
+                        
+                        {/* Toggle for additional fields */}
+                        <button
+                          type="button"
+                          onClick={() => toggleSection(index)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            padding: '0.5rem 0.75rem',
+                            border: 'none',
+                            background: 'transparent',
+                            color: '#3b82f6',
+                            fontWeight: 600,
+                            fontSize: '0.85rem',
+                            cursor: 'pointer',
+                            fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                          }}
+                        >
+                          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                          {isExpanded ? 'Weniger Details' : 'Mehr Details hinzufügen'}
+                        </button>
+
+                        {/* Expandable additional fields */}
+                        {isExpanded && (
+                          <div style={{ 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            gap: '0.75rem',
+                            padding: '1rem',
+                            background: '#fff',
+                            borderRadius: '8px',
+                            border: '1px solid #e2e8f0',
+                          }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                              <div>
+                                <label style={{ 
+                                  display: 'flex', 
+                                  alignItems: 'center',
+                                  gap: '0.35rem',
+                                  fontSize: '0.75rem', 
+                                  fontWeight: 600, 
+                                  color: '#64748b',
+                                  marginBottom: '0.25rem'
+                                }}>
+                                  <User size={12} /> Sprecher / Leitung
+                                </label>
+                                <input
+                                  type="text"
+                                  value={item.speaker || ''}
+                                  onChange={(e) => updateScheduleItem(index, { speaker: e.target.value || undefined })}
+                                  placeholder="Name eingeben"
+                                  style={{
+                                    width: '100%',
+                                    padding: '0.5rem',
+                                    border: '1.5px solid #e2e8f0',
+                                    borderRadius: '6px',
+                                    fontSize: '0.9rem',
+                                    fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                                  }}
+                                />
+                              </div>
+                              <div>
+                                <label style={{ 
+                                  display: 'flex', 
+                                  alignItems: 'center',
+                                  gap: '0.35rem',
+                                  fontSize: '0.75rem', 
+                                  fontWeight: 600, 
+                                  color: '#64748b',
+                                  marginBottom: '0.25rem'
+                                }}>
+                                  <MapPin size={12} /> Ort / Raum
+                                </label>
+                                <input
+                                  type="text"
+                                  value={item.location || ''}
+                                  onChange={(e) => updateScheduleItem(index, { location: e.target.value || undefined })}
+                                  placeholder="z.B. Großer Saal"
+                                  style={{
+                                    width: '100%',
+                                    padding: '0.5rem',
+                                    border: '1.5px solid #e2e8f0',
+                                    borderRadius: '6px',
+                                    fontSize: '0.9rem',
+                                    fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                                  }}
+                                />
+                              </div>
+                              <div>
+                                <label style={{ 
+                                  display: 'flex', 
+                                  alignItems: 'center',
+                                  gap: '0.35rem',
+                                  fontSize: '0.75rem', 
+                                  fontWeight: 600, 
+                                  color: '#64748b',
+                                  marginBottom: '0.25rem'
+                                }}>
+                                  <Timer size={12} /> Dauer
+                                </label>
+                                <input
+                                  type="text"
+                                  value={item.duration || ''}
+                                  onChange={(e) => updateScheduleItem(index, { duration: e.target.value || undefined })}
+                                  placeholder="z.B. 45 min"
+                                  style={{
+                                    width: '100%',
+                                    padding: '0.5rem',
+                                    border: '1.5px solid #e2e8f0',
+                                    borderRadius: '6px',
+                                    fontSize: '0.9rem',
+                                    fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                                  }}
+                                />
+                              </div>
+                              <div>
+                                <label style={{ 
+                                  display: 'flex', 
+                                  alignItems: 'center',
+                                  gap: '0.35rem',
+                                  fontSize: '0.75rem', 
+                                  fontWeight: 600, 
+                                  color: '#64748b',
+                                  marginBottom: '0.25rem'
+                                }}>
+                                  <Coffee size={12} /> Snacks / Getränke
+                                </label>
+                                <input
+                                  type="text"
+                                  value={item.snacks || ''}
+                                  onChange={(e) => updateScheduleItem(index, { snacks: e.target.value || undefined })}
+                                  placeholder="z.B. Kaffee & Kuchen"
+                                  style={{
+                                    width: '100%',
+                                    padding: '0.5rem',
+                                    border: '1.5px solid #e2e8f0',
+                                    borderRadius: '6px',
+                                    fontSize: '0.9rem',
+                                    fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                                  }}
+                                />
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <label style={{ 
+                                display: 'block',
+                                fontSize: '0.75rem', 
+                                fontWeight: 600, 
+                                color: '#64748b',
+                                marginBottom: '0.25rem'
+                              }}>
+                                Details / Beschreibung
+                              </label>
+                              <textarea
+                                value={item.details || ''}
+                                onChange={(e) => updateScheduleItem(index, { details: e.target.value || undefined })}
+                                placeholder="Optionale zusätzliche Informationen..."
+                                rows={2}
+                                style={{
+                                  width: '100%',
+                                  padding: '0.5rem',
+                                  border: '1.5px solid #e2e8f0',
+                                  borderRadius: '6px',
+                                  fontSize: '0.9rem',
+                                  fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                                  resize: 'vertical',
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Action buttons */}
+                        <div style={{ 
+                          display: 'flex', 
+                          gap: '0.5rem', 
+                          justifyContent: 'space-between',
+                          paddingTop: '0.5rem',
+                          borderTop: '1px solid #e2e8f0',
+                        }}>
+                          <button
+                            onClick={() => removeScheduleItem(index)}
                             style={{
-                              width: '80px',
-                              padding: '0.5rem',
-                              border: '1px solid #d1d5db',
-                              borderRadius: '4px',
+                              padding: '0.5rem 0.75rem',
+                              border: '1.5px solid #fecaca',
+                              borderRadius: '6px',
+                              backgroundColor: '#fef2f2',
+                              color: '#dc2626',
                               fontSize: '0.85rem',
-                              fontFamily: '"Inter", "Roboto", Arial, sans-serif'
-                            }}
-                          />
-                          <input
-                            type="text"
-                            value={item.title}
-                            onChange={(e) => updateScheduleItem(index, { title: e.target.value })}
-                            placeholder="Titel"
-                            autoFocus
-                            style={{
-                              flex: '1',
-                              padding: '0.5rem',
-                              border: '1px solid #d1d5db',
-                              borderRadius: '4px',
-                              fontSize: '0.85rem',
-                              fontFamily: '"Inter", "Roboto", Arial, sans-serif'
-                            }}
-                          />
-                          <select
-                            value={item.type}
-                            onChange={(e) => updateScheduleItem(index, { type: e.target.value as any })}
-                            style={{
-                              width: '110px',
-                              padding: '0.5rem',
-                              border: '1px solid #d1d5db',
-                              borderRadius: '4px',
-                              fontSize: '0.85rem',
-                              fontFamily: '"Inter", "Roboto", Arial, sans-serif'
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
                             }}
                           >
-                            <option value="session">Session</option>
-                            <option value="workshop">Workshop</option>
-                            <option value="break">Pause</option>
-                            <option value="game">Spiel</option>
-                            <option value="announcement">Ansage</option>
-                            <option value="transition">Übergang</option>
-                          </select>
-                          <input
-                            type="number"
-                            min={0}
-                            value={typeof item.delay === 'number' ? item.delay : 0}
-                            onChange={(e) => updateScheduleItem(index, { delay: Number(e.target.value) })}
-                            style={{
-                              width: '80px',
-                              padding: '0.5rem',
-                              border: '1px solid #d1d5db',
-                              borderRadius: '4px',
-                              fontSize: '0.85rem',
-                              fontFamily: '"Inter", "Roboto", Arial, sans-serif'
-                            }}
-                            placeholder="Delay (min)"
-                          />
-                        </div>
-                        
-                        {/* Additional optional fields */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                          <input
-                            type="text"
-                            value={item.speaker || ''}
-                            onChange={(e) => updateScheduleItem(index, { speaker: e.target.value || undefined })}
-                            placeholder="Sprecher"
-                            style={{
-                              padding: '0.5rem',
-                              border: '1px solid #d1d5db',
-                              borderRadius: '4px',
-                              fontSize: '0.85rem',
-                              fontFamily: '"Inter", "Roboto", Arial, sans-serif'
-                            }}
-                          />
-                          <input
-                            type="text"
-                            value={item.location || ''}
-                            onChange={(e) => updateScheduleItem(index, { location: e.target.value || undefined })}
-                            placeholder="Ort"
-                            style={{
-                              padding: '0.5rem',
-                              border: '1px solid #d1d5db',
-                              borderRadius: '4px',
-                              fontSize: '0.85rem',
-                              fontFamily: '"Inter", "Roboto", Arial, sans-serif'
-                            }}
-                          />
-                          <input
-                            type="text"
-                            value={item.duration || ''}
-                            onChange={(e) => updateScheduleItem(index, { duration: e.target.value || undefined })}
-                            placeholder="Dauer"
-                            style={{
-                              padding: '0.5rem',
-                              border: '1px solid #d1d5db',
-                              borderRadius: '4px',
-                              fontSize: '0.85rem',
-                              fontFamily: '"Inter", "Roboto", Arial, sans-serif'
-                            }}
-                          />
-                          <input
-                            type="text"
-                            value={item.facilitator || ''}
-                            onChange={(e) => updateScheduleItem(index, { facilitator: e.target.value || undefined })}
-                            placeholder="Moderator"
-                            style={{
-                              padding: '0.5rem',
-                              border: '1px solid #d1d5db',
-                              borderRadius: '4px',
-                              fontSize: '0.85rem',
-                              fontFamily: '"Inter", "Roboto", Arial, sans-serif'
-                            }}
-                          />
-                        </div>
-                        
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                          <textarea
-                            value={item.details || ''}
-                            onChange={(e) => updateScheduleItem(index, { details: e.target.value || undefined })}
-                            placeholder="Details"
-                            rows={2}
-                            style={{
-                              padding: '0.5rem',
-                              border: '1px solid #d1d5db',
-                              borderRadius: '4px',
-                              fontSize: '0.85rem',
-                              fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                              resize: 'vertical'
-                            }}
-                          />
-                          <textarea
-                            value={item.materials || ''}
-                            onChange={(e) => updateScheduleItem(index, { materials: e.target.value || undefined })}
-                            placeholder="Materialien"
-                            rows={2}
-                            style={{
-                              padding: '0.5rem',
-                              border: '1px solid #d1d5db',
-                              borderRadius: '4px',
-                              fontSize: '0.85rem',
-                              fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                              resize: 'vertical'
-                            }}
-                          />
-                        </div>
-                        
-                        <input
-                          type="text"
-                          value={item.snacks || ''}
-                          onChange={(e) => updateScheduleItem(index, { snacks: e.target.value || undefined })}
-                          placeholder="Snacks/Getränke"
-                          style={{
-                            padding: '0.5rem',
-                            border: '1px solid #d1d5db',
-                            borderRadius: '4px',
-                            fontSize: '0.85rem',
-                            fontFamily: '"Inter", "Roboto", Arial, sans-serif'
-                          }}
-                        />
-                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                            <Trash2 size={14} />
+                            Löschen
+                          </button>
                           <button
                             onClick={() => setEditingIndex(null)}
                             style={{
-                              padding: '0.4rem 0.8rem',
-                              border: '1px solid #10b981',
-                              borderRadius: '4px',
+                              padding: '0.5rem 1.25rem',
+                              border: '2px solid #059669',
+                              borderRadius: '6px',
                               backgroundColor: '#10b981',
                               color: '#fff',
-                              fontSize: '0.8rem',
-                              fontWeight: '600',
+                              fontSize: '0.9rem',
+                              fontWeight: 700,
                               cursor: 'pointer',
-                              fontFamily: '"Inter", "Roboto", Arial, sans-serif'
+                              fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                              boxShadow: '0 2px 4px rgba(16, 185, 129, 0.3)',
                             }}
                           >
                             ✓ Fertig
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      // Display Mode - Clean compact card
+                      <div style={{
+                        padding: '0.875rem 1rem',
+                        border: `2px solid ${colors.border}`,
+                        borderRadius: '10px',
+                        backgroundColor: colors.bg,
+                        display: 'flex',
+                        gap: '0.75rem',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                      >
+                        {/* Drag handle and time */}
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '0.5rem',
+                          flexShrink: 0,
+                        }}>
+                          <GripVertical size={16} color="#94a3b8" style={{ cursor: 'grab' }} />
+                          <div style={{
+                            padding: '0.35rem 0.6rem',
+                            background: '#fff',
+                            borderRadius: '6px',
+                            border: '1.5px solid #e2e8f0',
+                            fontWeight: 700,
+                            fontSize: '0.9rem',
+                            color: '#1e293b',
+                            fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                            minWidth: '60px',
+                            textAlign: 'center',
+                          }}>
+                            {item.time}
+                          </div>
+                        </div>
+                        
+                        {/* Content */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <span style={{
+                              fontSize: '0.95rem',
+                              fontWeight: 600,
+                              color: '#1e293b',
+                              fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif',
+                            }}>
+                              {item.title}
+                            </span>
+                            <span style={{
+                              padding: '0.15rem 0.5rem',
+                              borderRadius: '999px',
+                              fontSize: '0.7rem',
+                              fontWeight: 600,
+                              background: colors.bg,
+                              color: colors.text,
+                              border: `1px solid ${colors.border}`,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                            }}>
+                              {typeIcons[item.type]}
+                              {typeLabels[item.type] || item.type}
+                            </span>
+                            {item.delay && item.delay > 0 && (
+                              <span style={{
+                                padding: '0.15rem 0.4rem',
+                                borderRadius: '999px',
+                                fontSize: '0.7rem',
+                                fontWeight: 600,
+                                background: '#fef3c7',
+                                color: '#92400e',
+                                border: '1px solid #fbbf24',
+                              }}>
+                                +{item.delay}m
+                              </span>
+                            )}
+                          </div>
+                          {(item.speaker || item.location || item.duration) && (
+                            <div style={{
+                              fontSize: '0.8rem',
+                              color: '#64748b',
+                              marginTop: '0.25rem',
+                              fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                              display: 'flex',
+                              gap: '0.75rem',
+                              flexWrap: 'wrap',
+                            }}>
+                              {item.speaker && (
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                  <User size={12} /> {item.speaker}
+                                </span>
+                              )}
+                              {item.location && (
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                  <MapPin size={12} /> {item.location}
+                                </span>
+                              )}
+                              {item.duration && (
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                  <Timer size={12} /> {item.duration}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Actions */}
+                        <div style={{ 
+                          display: 'flex', 
+                          gap: '0.25rem', 
+                          alignItems: 'center',
+                          flexShrink: 0,
+                        }}>
+                          <button
+                            onClick={() => moveItem(index, 'up')}
+                            disabled={index === 0}
+                            style={{
+                              padding: '0.4rem',
+                              border: 'none',
+                              borderRadius: '6px',
+                              backgroundColor: index === 0 ? 'transparent' : '#fff',
+                              color: index === 0 ? '#cbd5e1' : '#64748b',
+                              cursor: index === 0 ? 'not-allowed' : 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                            title="Nach oben"
+                          >
+                            <ChevronUp size={18} />
+                          </button>
+                          <button
+                            onClick={() => moveItem(index, 'down')}
+                            disabled={index === items.length - 1}
+                            style={{
+                              padding: '0.4rem',
+                              border: 'none',
+                              borderRadius: '6px',
+                              backgroundColor: index === items.length - 1 ? 'transparent' : '#fff',
+                              color: index === items.length - 1 ? '#cbd5e1' : '#64748b',
+                              cursor: index === items.length - 1 ? 'not-allowed' : 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                            title="Nach unten"
+                          >
+                            <ChevronDown size={18} />
+                          </button>
+                          <button
+                            onClick={() => setEditingIndex(index)}
+                            style={{
+                              padding: '0.4rem',
+                              border: 'none',
+                              borderRadius: '6px',
+                              backgroundColor: '#fff',
+                              color: '#3b82f6',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                            title="Bearbeiten"
+                          >
+                            <Edit2 size={16} />
                           </button>
                           <button
                             onClick={() => removeScheduleItem(index)}
                             style={{
                               padding: '0.4rem',
                               border: 'none',
-                              backgroundColor: '#fee2e2',
+                              borderRadius: '6px',
+                              backgroundColor: '#fef2f2',
                               color: '#dc2626',
                               cursor: 'pointer',
-                              borderRadius: '4px',
                               display: 'flex',
                               alignItems: 'center',
-                              justifyContent: 'center'
+                              justifyContent: 'center',
                             }}
+                            title="Löschen"
                           >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      // Display Mode
-                      <div style={{
-                        padding: '0.75rem',
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '6px',
-                        backgroundColor: '#f9fafb',
-                        display: 'flex',
-                        gap: '0.75rem',
-                        alignItems: 'center',
-                        justifyContent: 'space-between'
-                      }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{
-                            fontSize: '0.75rem',
-                            color: '#64748b',
-                            fontWeight: '600',
-                            marginBottom: '0.25rem',
-                            fontFamily: '"Inter", "Roboto", Arial, sans-serif'
-                          }}>
-                            {item.time} {item.delay ? `(+${item.delay}m)` : ''} • {item.type}
-                          </div>
-                          <div style={{
-                            fontSize: '0.95rem',
-                            fontWeight: '600',
-                            color: '#181818',
-                            fontFamily: '"Gloria Hallelujah", "Caveat", "Comic Neue", cursive, sans-serif'
-                          }}>
-                            {item.title}
-                          </div>
-                          {(item.speaker || item.location || item.duration) && (
-                            <div style={{
-                              fontSize: '0.8rem',
-                              color: '#6b7280',
-                              marginTop: '0.25rem',
-                              fontFamily: '"Inter", "Roboto", Arial, sans-serif'
-                            }}>
-                              {item.speaker && <span>Sprecher: {item.speaker}</span>}
-                              {item.speaker && item.location && <span> • </span>}
-                              {item.location && <span>Ort: {item.location}</span>}
-                              {(item.speaker || item.location) && item.duration && <span> • </span>}
-                              {item.duration && <span>Dauer: {item.duration}</span>}
-                            </div>
-                          )}
-                        </div>
-                            <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginRight: '0.5rem' }}>
-                                <label style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Delay</label>
-                                <input
-                                  type="number"
-                                  min={0}
-                                  value={typeof item.delay === 'number' ? item.delay : 0}
-                                  onChange={(e) => updateScheduleItem(index, { delay: Number(e.target.value) })}
-                                  style={{
-                                    width: '64px',
-                                    padding: '0.25rem',
-                                    border: '1px solid #d1d5db',
-                                    borderRadius: '4px',
-                                    fontSize: '0.85rem',
-                                    fontFamily: '"Inter", "Roboto", Arial, sans-serif'
-                                  }}
-                                  title="Delay in minutes"
-                                />
-                              </div>
-                          <button
-                            onClick={() => moveItem(index, 'up')}
-                            disabled={index === 0}
-                            style={{
-                              padding: '0.3rem 0.5rem',
-                              border: 'none',
-                              borderRadius: '3px',
-                              backgroundColor: index === 0 ? '#f3f4f6' : '#fff',
-                              color: index === 0 ? '#9ca3af' : '#181818',
-                              cursor: index === 0 ? 'not-allowed' : 'pointer',
-                              fontSize: '0.75rem',
-                              fontWeight: '600'
-                            }}
-                          >
-                            ↑
-                          </button>
-                          <button
-                            onClick={() => moveItem(index, 'down')}
-                            disabled={index === items.length - 1}
-                            style={{
-                              padding: '0.3rem 0.5rem',
-                              border: 'none',
-                              borderRadius: '3px',
-                              backgroundColor: index === items.length - 1 ? '#f3f4f6' : '#fff',
-                              color: index === items.length - 1 ? '#9ca3af' : '#181818',
-                              cursor: index === items.length - 1 ? 'not-allowed' : 'pointer',
-                              fontSize: '0.75rem',
-                              fontWeight: '600'
-                            }}
-                          >
-                            ↓
-                          </button>
-                          <button
-                            onClick={() => setEditingIndex(index)}
-                            style={{
-                              padding: '0.3rem 0.5rem',
-                              border: 'none',
-                              borderRadius: '3px',
-                              backgroundColor: '#fff',
-                              color: '#0284c7',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            <Edit2 size={14} />
-                          </button>
-                          <button
-                            onClick={() => removeScheduleItem(index)}
-                            style={{
-                              padding: '0.3rem',
-                              border: 'none',
-                              borderRadius: '3px',
-                              backgroundColor: '#fee2e2',
-                              color: '#dc2626',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            <Trash2 size={14} />
+                            <Trash2 size={16} />
                           </button>
                         </div>
                       </div>
                     )}
                   </div>
-                ))
+                );
+              })
               )}
             </div>
 
+            {/* Action Buttons */}
             {/* Action Buttons */}
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
               <button
@@ -505,12 +786,12 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ schedule, onSave, onC
                 style={{
                   flex: '1',
                   padding: '0.875rem',
-                  border: '2px solid #181818',
+                  border: '2px solid #059669',
                   borderRadius: '8px',
                   fontSize: '1rem',
                   fontWeight: '700',
                   fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                  backgroundColor: '#fbbf24',
+                  backgroundColor: '#10b981',
                   color: '#fff',
                   cursor: 'pointer',
                   display: 'flex',
@@ -518,20 +799,20 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ schedule, onSave, onC
                   justifyContent: 'center',
                   gap: '0.5rem',
                   transition: 'all 0.2s ease',
-                  boxShadow: '2px 4px 0 #181818'
+                  boxShadow: '0 2px 4px rgba(16, 185, 129, 0.3)'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f59e0b';
+                  e.currentTarget.style.backgroundColor = '#059669';
                   e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '3px 6px 0 #181818';
+                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(16, 185, 129, 0.35)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#fbbf24';
+                  e.currentTarget.style.backgroundColor = '#10b981';
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '2px 4px 0 #181818';
+                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(16, 185, 129, 0.3)';
                 }}
               >
-                <Save size={16} />
+                <Check size={18} />
                 Speichern
               </button>
 
@@ -539,12 +820,12 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ schedule, onSave, onC
                 onClick={onCancel}
                 style={{
                   padding: '0.875rem 1rem',
-                  border: '2px solid #64748b',
+                  border: '2px solid #cbd5e1',
                   borderRadius: '8px',
                   fontSize: '1rem',
                   fontWeight: '600',
                   fontFamily: '"Inter", "Roboto", Arial, sans-serif',
-                  backgroundColor: '#fff',
+                  backgroundColor: '#f8fafc',
                   color: '#64748b',
                   cursor: 'pointer',
                   display: 'flex',
@@ -555,20 +836,25 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ schedule, onSave, onC
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = '#f1f5f9';
+                  e.currentTarget.style.borderColor = '#94a3b8';
                   e.currentTarget.style.transform = 'translateY(-1px)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#fff';
+                  e.currentTarget.style.backgroundColor = '#f8fafc';
+                  e.currentTarget.style.borderColor = '#cbd5e1';
                   e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
-                <X size={16} />
+                <X size={18} />
                 Abbrechen
               </button>
             </div>
           </div>
         </div>
       </div>
+    </div>
+        </div>
+      </main>
     </div>
   );
 };
