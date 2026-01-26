@@ -27,6 +27,30 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
+    - name: Create .env.production file
+      run: |
+        cat << EOF > .env.production
+        DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@postgres:5432/${{ vars.POSTGRES_DB }}?schema=public
+        POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+        POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+        POSTGRES_DB=${{ vars.POSTGRES_DB }}
+        SMTP_HOST=${{ vars.SMTP_HOST }}
+        SMTP_PORT=${{ vars.SMTP_PORT }}
+        SMTP_USER=${{ secrets.SMTP_USER }}
+        SMTP_PASS=${{ secrets.SMTP_PASS }}
+        SMTP_SECURE=false
+        SMTP_IGNORE_TLS=false
+        SMTP_REQUIRE_TLS=true
+        SMTP_REJECT_UNAUTHORIZED=false
+        MAIL_FROM_NAME=${{ vars.MAIL_FROM_NAME }}
+        MAIL_FROM_EMAIL=${{ vars.MAIL_FROM_EMAIL }}
+        LOG_LEVEL=info
+        PRISMA_LOG=warn
+        APP_BASE_PATH=
+        NODE_ENV=production
+        FRONTEND_HOST=${{ vars.FRONTEND_HOST }}
+        EOF
+
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
