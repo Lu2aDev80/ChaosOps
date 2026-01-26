@@ -56,10 +56,12 @@ async function createSession(userId: string) {
 
 function setSessionCookie(res: any, token: string, expiresAt: Date) {
   const isProduction = process.env.NODE_ENV === 'production';
+  // Enable secure cookies in production (HTTPS is now configured)
+  const isSecure = isProduction;
   res.cookie("sid", token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: isProduction, // Use secure cookies in production (HTTPS)
+    secure: isSecure,
     expires: expiresAt,
     path: "/",
   });

@@ -78,8 +78,11 @@ services:
       - api
     volumes:
       - ./nginx-proxy.conf:/etc/nginx/conf.d/default.conf
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro
     ports:
       - '80:80'
+      - '443:443'
     restart: unless-stopped
     networks:
       - app-network
