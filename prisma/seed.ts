@@ -37,19 +37,24 @@ async function main() {
 
   // Seed a demo admin user with hashed password
   console.log('👤 Seeding admin user...')
-  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123'
-  const adminPasswordHash = await bcrypt.hash(adminPassword, 12)
-  
-  await prisma.adminUser.upsert({
-    where: { username: 'admin' },
-    update: {},
-    create: {
-      username: 'admin',
-      email: 'admin@konfidayplaner.de',
-      passwordHash: adminPasswordHash,
-    },
-  })
-  console.log('  ✓ Created/Updated: admin user (password from ADMIN_PASSWORD env or default)')
+  const adminPassword = process.env.ADMIN_PASSWORD
+  if (!adminPassword) {
+    console.log('  ⚠️ ADMIN_PASSWORD environment variable not set - skipping admin user creation')
+    console.log('  💡 Set ADMIN_PASSWORD in your .env file to create an admin user')
+  } else {
+    const adminPasswordHash = await bcrypt.hash(adminPassword, 12)
+    
+    await prisma.adminUser.upsert({
+      where: { username: 'admin' },
+      update: {},
+      create: {
+        username: 'admin',
+        email: 'admin@konfidayplaner.de',
+        passwordHash: adminPasswordHash,
+      },
+    })
+    console.log('  ✓ Created/Updated: admin user')
+  }
 
   console.log('✅ Database seeding completed!')
 }

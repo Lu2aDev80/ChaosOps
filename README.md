@@ -57,15 +57,23 @@ Set up your environment variables:
 # Copy the example environment file
 cp .env.example .env
 
-# Edit .env with your local settings (database credentials, SMTP, etc.)
-# For local development, the default values should work out of the box
+# IMPORTANT: Edit .env and set secure values for:
+# - POSTGRES_USER (required)
+# - POSTGRES_PASSWORD (required - use a strong, unique password!)
+# - DATABASE_URL (required - must match POSTGRES_USER and POSTGRES_PASSWORD)
 ```
 
-**Key environment variables for development:**
-- `DATABASE_URL`: PostgreSQL connection string
-- `NODE_ENV`: Set to `development`
+**Required environment variables:**
+- `DATABASE_URL`: PostgreSQL connection string (required)
+- `POSTGRES_USER`: Database username (required for Docker)
+- `POSTGRES_PASSWORD`: Database password (required for Docker - use a secure password!)
+
+**Optional environment variables:**
+- `NODE_ENV`: Set to `development` or `production`
 - `FRONTEND_URL`: Usually `http://localhost:5173` (auto-detected)
 - `LOG_LEVEL`: Set to `debug` for verbose logging
+
+> ⚠️ **Security Note**: Never commit `.env` or `.env.production` files with real credentials to version control. The docker-compose.yml file requires these environment variables and will fail to start if they are not set.
 
 ### 4. Database Setup
 
