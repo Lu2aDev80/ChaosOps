@@ -60,8 +60,8 @@ const createSampleItem = (partial: Partial<ScheduleItem>): ScheduleItem => {
 // Sample schedule for demo/development
 // Includes examples of time and position changes for demonstration
 const sampleSchedule: ScheduleItem[] = [
-  createSampleItem({ id: 1, position: 0, time: '08:45', type: 'announcement', title: 'Ankommen & Registrierung', details: 'Bitte Namensschild holen und Platz suchen.' }),
-  createSampleItem({ id: 2, position: 1, time: '09:00', type: 'session', title: 'Begrüßung & Intro', speaker: 'Lea', location: 'Großer Raum', details: 'Kurzer Überblick über den Tag.' }),
+  createSampleItem({ id: 1, position: 0, time: '08:45', type: 'announcement', title: 'Ankommen & Registrierung', details: 'Bitte Namensschild holen und Platz suchen.', helperMeetingTime: '08:15', helperNotes: 'Namensschilder vorbereiten, Begrüßungsstation aufbauen', showHelperInfoOnSharedPlan: true }),
+  createSampleItem({ id: 2, position: 1, time: '09:00', type: 'session', title: 'Begrüßung & Intro', speaker: 'Lea', location: 'Großer Raum', details: 'Kurzer Überblick über den Tag.', helperMeetingTime: '08:45', helperNotes: 'Beamer testen, Mikrofon bereit', showHelperInfoOnDisplay: true, showHelperInfoOnSharedPlan: true }),
   createSampleItem({ 
     id: 3, 
     position: 2,
@@ -182,6 +182,7 @@ const PlannerPage: React.FC = () => {
       showClock={true}
       autoCenter={true}
       debug={false}
+      viewType="preview"
       resetButton={
         <button
           onClick={() => navigate(-1)}

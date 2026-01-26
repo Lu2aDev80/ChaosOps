@@ -2,6 +2,7 @@ import React from 'react';
 import styles from './Planer.module.css';
 import { MapPin, Mic, Hourglass, Info, Coffee, Megaphone, Hammer, Dice5 } from 'lucide-react';
 import type { ScheduleItem } from '../../types/schedule';
+import HelperInfoSticky from './HelperInfoSticky';
 
 interface ScheduleCardProps {
   item: ScheduleItem;
@@ -9,9 +10,11 @@ interface ScheduleCardProps {
   debug?: boolean;
   onRef?: (el: HTMLElement | null) => void;
   index?: number;
+  /** View type for helper info display: 'display', 'shared', or 'preview' */
+  viewType?: 'display' | 'shared' | 'preview';
 }
 
-const ScheduleCard: React.FC<ScheduleCardProps> = ({ item, isPassed, debug, onRef, index = 0 }) => {
+const ScheduleCard: React.FC<ScheduleCardProps> = ({ item, isPassed, debug, onRef, index = 0, viewType = 'preview' }) => {
   const typeCls = styles['type_' + item.type];
   const edgeCls = index % 3 === 1 ? styles.edgeB : index % 3 === 2 ? styles.edgeC : '';
   const addMinutesToTime = (timeStr?: string, minutesToAdd?: number) => {
@@ -159,6 +162,9 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ item, isPassed, debug, onRe
             )}
           </>
         )}
+        
+        {/* Helper Info Sticky Note */}
+        <HelperInfoSticky item={item} viewType={viewType} />
       </div>
     </article>
   );

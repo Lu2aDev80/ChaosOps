@@ -23,6 +23,12 @@ export interface ScheduleItem {
   createdAt: string;
   updatedAt: string;
   tags: Tag[];
+  // Helper/Employee information fields
+  helperMeetingTime?: string;     // Earlier meeting time for team
+  helperNotes?: string;           // Additional notes for helpers
+  helperMaterials?: string;       // Materials helpers need to prepare
+  showHelperInfoOnDisplay?: boolean;    // Show on all displays
+  showHelperInfoOnSharedPlan?: boolean; // Show on shared plans only
 }
 
 export interface DayPlan {

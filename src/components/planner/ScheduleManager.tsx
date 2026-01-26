@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Clock, Save, X, Edit2, ChevronUp, ChevronDown, GripVertical, MapPin, User, Timer, Coffee, Check, FileText, Gamepad2, Megaphone, ArrowRight, Wrench, PauseCircle } from 'lucide-react';
+import { Plus, Trash2, Clock, Save, X, Edit2, ChevronUp, ChevronDown, GripVertical, MapPin, User, Timer, Coffee, Check, FileText, Gamepad2, Megaphone, ArrowRight, Wrench, PauseCircle, AlertCircle, Package, Users } from 'lucide-react';
 import type { ScheduleItem } from '../../types/schedule';
 import styles from '../../pages/Admin.module.css';
 import FlipchartBackground from '../layout/FlipchartBackground';
@@ -526,6 +526,168 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ schedule, onSave, onC
                                 }}
                               />
                             </div>
+
+                            {/* Helper/Team Info Section - Red Sticky Style */}
+                            <div style={{
+                              marginTop: '0.75rem',
+                              padding: '1rem',
+                              background: 'linear-gradient(135deg, #fecaca 0%, #fca5a5 50%, #f87171 100%)',
+                              borderRadius: '8px',
+                              border: '2px solid #b91c1c',
+                              position: 'relative',
+                            }}>
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                marginBottom: '0.75rem',
+                                color: '#7f1d1d',
+                                fontWeight: 700,
+                                fontSize: '0.9rem',
+                              }}>
+                                <Users size={16} />
+                                <span>Team-/Helfer-Informationen</span>
+                              </div>
+
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                                <div>
+                                  <label style={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center',
+                                    gap: '0.35rem',
+                                    fontSize: '0.75rem', 
+                                    fontWeight: 600, 
+                                    color: '#991b1b',
+                                    marginBottom: '0.25rem'
+                                  }}>
+                                    <Clock size={12} /> Team-Treffzeit
+                                  </label>
+                                  <input
+                                    type="time"
+                                    value={item.helperMeetingTime || ''}
+                                    onChange={(e) => updateScheduleItem(index, { helperMeetingTime: e.target.value || undefined })}
+                                    style={{
+                                      width: '100%',
+                                      padding: '0.5rem',
+                                      border: '1.5px solid #fca5a5',
+                                      borderRadius: '6px',
+                                      fontSize: '0.9rem',
+                                      fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                                      background: '#fff',
+                                    }}
+                                  />
+                                </div>
+                                <div>
+                                  <label style={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center',
+                                    gap: '0.35rem',
+                                    fontSize: '0.75rem', 
+                                    fontWeight: 600, 
+                                    color: '#991b1b',
+                                    marginBottom: '0.25rem'
+                                  }}>
+                                    <Package size={12} /> Material für Team
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={item.helperMaterials || ''}
+                                    onChange={(e) => updateScheduleItem(index, { helperMaterials: e.target.value || undefined })}
+                                    placeholder="z.B. Flipchart, Marker"
+                                    style={{
+                                      width: '100%',
+                                      padding: '0.5rem',
+                                      border: '1.5px solid #fca5a5',
+                                      borderRadius: '6px',
+                                      fontSize: '0.9rem',
+                                      fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                                      background: '#fff',
+                                    }}
+                                  />
+                                </div>
+                              </div>
+
+                              <div style={{ marginTop: '0.75rem' }}>
+                                <label style={{ 
+                                  display: 'flex', 
+                                  alignItems: 'center',
+                                  gap: '0.35rem',
+                                  fontSize: '0.75rem', 
+                                  fontWeight: 600, 
+                                  color: '#991b1b',
+                                  marginBottom: '0.25rem'
+                                }}>
+                                  <FileText size={12} /> Hinweise für Team
+                                </label>
+                                <textarea
+                                  value={item.helperNotes || ''}
+                                  onChange={(e) => updateScheduleItem(index, { helperNotes: e.target.value || undefined })}
+                                  placeholder="z.B. Raum vorher lüften, Technik testen..."
+                                  rows={2}
+                                  style={{
+                                    width: '100%',
+                                    padding: '0.5rem',
+                                    border: '1.5px solid #fca5a5',
+                                    borderRadius: '6px',
+                                    fontSize: '0.9rem',
+                                    fontFamily: '"Inter", "Roboto", Arial, sans-serif',
+                                    resize: 'vertical',
+                                    background: '#fff',
+                                  }}
+                                />
+                              </div>
+
+                              {/* Visibility toggles */}
+                              <div style={{ 
+                                marginTop: '0.75rem', 
+                                display: 'flex', 
+                                flexDirection: 'column',
+                                gap: '0.5rem',
+                              }}>
+                                <label style={{ 
+                                  display: 'flex', 
+                                  alignItems: 'center',
+                                  gap: '0.5rem',
+                                  fontSize: '0.85rem', 
+                                  fontWeight: 600, 
+                                  color: '#7f1d1d',
+                                  cursor: 'pointer',
+                                }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={item.showHelperInfoOnDisplay === true}
+                                    onChange={(e) => updateScheduleItem(index, { showHelperInfoOnDisplay: e.target.checked })}
+                                    style={{
+                                      width: '16px',
+                                      height: '16px',
+                                      accentColor: '#b91c1c',
+                                    }}
+                                  />
+                                  Auf allen Displays anzeigen
+                                </label>
+                                <label style={{ 
+                                  display: 'flex', 
+                                  alignItems: 'center',
+                                  gap: '0.5rem',
+                                  fontSize: '0.85rem', 
+                                  fontWeight: 600, 
+                                  color: '#7f1d1d',
+                                  cursor: 'pointer',
+                                }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={item.showHelperInfoOnSharedPlan !== false}
+                                    onChange={(e) => updateScheduleItem(index, { showHelperInfoOnSharedPlan: e.target.checked })}
+                                    style={{
+                                      width: '16px',
+                                      height: '16px',
+                                      accentColor: '#b91c1c',
+                                    }}
+                                  />
+                                  Auf geteilten Plänen (Link/QR) anzeigen
+                                </label>
+                              </div>
+                            </div>
                           </div>
                         )}
                         
@@ -660,6 +822,26 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ schedule, onSave, onC
                                 border: '1px solid #fbbf24',
                               }}>
                                 +{item.delay}m
+                              </span>
+                            )}
+                            {/* Helfer-Info Indikator */}
+                            {(item.helperNotes || item.helperMaterials || item.helperMeetingTime) && (
+                              <span 
+                                title="Team-Infos vorhanden"
+                                style={{
+                                  padding: '0.15rem 0.4rem',
+                                  borderRadius: '999px',
+                                  fontSize: '0.7rem',
+                                  fontWeight: 600,
+                                  background: '#fee2e2',
+                                  color: '#dc2626',
+                                  border: '1px solid #f87171',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.2rem',
+                                }}>
+                                <Users size={10} />
+                                Team
                               </span>
                             )}
                           </div>

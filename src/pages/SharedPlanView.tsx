@@ -444,6 +444,7 @@ const SharedPlanView: React.FC = () => {
             autoCenter={true}
             debug={false}
             displayInfo={`Geteilt von ${sharedPlan.dayPlan.event.organisation.name}`}
+            viewType="shared"
           />
         </div>
 

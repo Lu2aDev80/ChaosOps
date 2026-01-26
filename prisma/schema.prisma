@@ -73,6 +73,12 @@ model ScheduleItem {
   createdAt                     DateTime                        @default(now())
   updatedAt                     DateTime                        @updatedAt
   delay                         Int?
+  // Helper/Employee information fields
+  helperMeetingTime             String?                         // Earlier meeting time for team
+  helperNotes                   String?                         // Additional notes for helpers
+  helperMaterials               String?                         // Materials helpers need to prepare
+  showHelperInfoOnDisplay       Boolean?                        @default(false) // Show on all displays
+  showHelperInfoOnSharedPlan    Boolean?                        @default(true)  // Show on shared plans only
   ScheduleItemToScheduleItemTag ScheduleItemToScheduleItemTag[]
   dayPlan                       DayPlan                         @relation(fields: [dayPlanId], references: [id], onDelete: Cascade)
 

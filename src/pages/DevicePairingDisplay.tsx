@@ -1082,6 +1082,7 @@ const DevicePairingDisplay = () => {
                 showClock={true}
                 autoCenter={true}
                 displayInfo={deviceId}
+                viewType="display"
               />
               {/* Settings button overlay for running view */}
               {isPaired && deviceId && (

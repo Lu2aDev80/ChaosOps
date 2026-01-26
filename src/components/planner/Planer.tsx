@@ -21,6 +21,8 @@ interface PlanerProps {
   autoCenter?: boolean; // automatically center current activity
   displayInfo?: string; // optional display name/info to show in header
   resetButton?: React.ReactNode; // optional reset button to show in top left
+  /** View type for helper info display: 'display', 'shared', or 'preview' */
+  viewType?: 'display' | 'shared' | 'preview';
 }
 
 const Planer: React.FC<PlanerProps> = ({
@@ -31,7 +33,8 @@ const Planer: React.FC<PlanerProps> = ({
   showClock = true,
   autoCenter = true,
   displayInfo,
-  resetButton
+  resetButton,
+  viewType = 'preview'
 }) => {
   const currentTime = useClock(showClock);
 
@@ -146,6 +149,7 @@ const Planer: React.FC<PlanerProps> = ({
               debug={debug}
               onRef={el => { if (el) cardRefs.current[idx] = el as HTMLElement; }}
               index={idx}
+              viewType={viewType}
             />
           );
         })}
