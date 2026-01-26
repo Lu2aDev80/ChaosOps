@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Clock, Save, X, Edit2, ChevronUp, ChevronDown, GripVertical, MapPin, User, Timer, Coffee, Check, FileText, Gamepad2, Megaphone, ArrowRight, Wrench, PauseCircle, AlertCircle, Package, Users } from 'lucide-react';
+import { Plus, Trash2, Clock, X, Edit2, ChevronUp, ChevronDown, GripVertical, MapPin, User, Timer, Coffee, Check, FileText, Gamepad2, Megaphone, ArrowRight, Wrench, PauseCircle, Package, Users } from 'lucide-react';
 import type { ScheduleItem } from '../../types/schedule';
 import styles from '../../pages/Admin.module.css';
 import FlipchartBackground from '../layout/FlipchartBackground';
